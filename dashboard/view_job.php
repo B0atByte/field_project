@@ -83,7 +83,7 @@ if ($job['status'] === 'completed') {
   </div>
 
   <!-- Google Maps API -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAhahcvRts5Ln9pcIan4CQ-JQXLRsrL9as&callback=initMap" async defer></script>
+  <script src="kEY" async defer></script>
 
   <script>
     function getLocation() {

@@ -140,7 +140,7 @@ while ($row = $result->fetch_assoc()) {
   </div>
 
   <!-- Google Map Script -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAhahcvRts5Ln9pcIan4CQ-JQXLRsrL9as&callback=initMap" async defer></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=" async defer></script>
   <script>
     let map;
     function initMap() {

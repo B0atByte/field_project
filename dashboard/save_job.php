@@ -42,7 +42,7 @@ $job = $job_result->fetch_assoc();
 
 // ส่งแจ้งเตือน Discord
 function sendToDiscord($job, $note, $gps, $images) {
-    $webhookUrl = "https://discord.com/api/webhooks/1372323356715778119/Ew1itSE--T_bYsggb3nl8kQ7MG2cNFaShBkxu_XZkir_smpOBWWnBUnRygvu5dmkogO4";
+    $webhookUrl = "";
 
     $gpsLink = "https://www.google.com/maps?q=" . urlencode($gps);
 
