@@ -191,6 +191,6 @@ while ($row = $result->fetch_assoc()) {
   }, 10000);
 </script>
 
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB3NfHFEyJb3yltga-dX0C23jsLEAQpORc&callback=initMap" async defer></script>
+KEY
 </body>
 </html>

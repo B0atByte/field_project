@@ -220,6 +220,6 @@ function validateFileCount(input) {
   }
 }
 </script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB3NfHFEyJb3yltga-dX0C23jsLEAQpORc&callback=initMap" async defer></script>
+Key
 </body>
 </html>
