@@ -13,25 +13,8 @@ if (!$id) {
     exit;
 }
 
-// อัปเดตข้อมูล
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = $_POST['name'];
-    $username = $_POST['username'];
-    $role = $_POST['role'];
-    $password = $_POST['password'];
-
-    if ($password !== '') {
-        $password_hashed = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $conn->prepare("UPDATE users SET name=?, username=?, role=?, password=? WHERE id=?");
-        $stmt->bind_param("ssssi", $name, $username, $role, $password_hashed, $id);
-    } else {
-        $stmt = $conn->prepare("UPDATE users SET name=?, username=?, role=? WHERE id=?");
-        $stmt->bind_param("sssi", $name, $username, $role, $id);
-    }
-    $stmt->execute();
-    header("Location: users.php");
-    exit;
-}
+// ดึงแผนกทั้งหมด
+$departments = $conn->query("SELECT * FROM departments");
 
 // ดึงข้อมูลผู้ใช้
 $stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
@@ -44,7 +27,53 @@ if (!$user) {
     echo "ไม่พบผู้ใช้";
     exit;
 }
+
+// ดึงแผนกที่มองเห็นได้
+$visible_stmt = $conn->prepare("SELECT to_department_id FROM department_visibility WHERE from_department_id = ?");
+$visible_stmt->bind_param("i", $user['department_id']);
+$visible_stmt->execute();
+$visible_result = $visible_stmt->get_result();
+$visible_ids = [];
+while ($row = $visible_result->fetch_assoc()) {
+    $visible_ids[] = $row['to_department_id'];
+}
+
+// อัปเดตข้อมูล
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name = $_POST['name'];
+    $username = $_POST['username'];
+    $role = $_POST['role'];
+    $password = $_POST['password'];
+    $department_id = $_POST['department_id'];
+    $visible_departments = $_POST['visible_departments'] ?? [];
+
+    // อัปเดตข้อมูลหลัก
+    if ($password !== '') {
+        $password_hashed = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $conn->prepare("UPDATE users SET name=?, username=?, role=?, password=?, department_id=? WHERE id=?");
+        $stmt->bind_param("ssssii", $name, $username, $role, $password_hashed, $department_id, $id);
+    } else {
+        $stmt = $conn->prepare("UPDATE users SET name=?, username=?, role=?, department_id=? WHERE id=?");
+        $stmt->bind_param("sssii", $name, $username, $role, $department_id, $id);
+    }
+    $stmt->execute();
+
+    // ลบของเก่า (ใช้ department เดิมของ user แทนใหม่ เพื่อความถูกต้อง)
+    $old_department_id = $user['department_id'];
+    $conn->query("DELETE FROM department_visibility WHERE from_department_id = $old_department_id");
+
+    // เพิ่มของใหม่
+    foreach ($visible_departments as $to_dept_id) {
+        $stmt = $conn->prepare("INSERT INTO department_visibility (from_department_id, to_department_id) VALUES (?, ?)");
+        $stmt->bind_param("ii", $department_id, $to_dept_id);
+        $stmt->execute();
+    }
+
+    header("Location: users.php");
+    exit;
+}
 ?>
+
 
 <!DOCTYPE html>
 <html lang="th">
@@ -76,7 +105,36 @@ if (!$user) {
         <label class="block text-sm text-gray-600">บทบาท</label>
         <select name="role" class="w-full px-3 py-2 border rounded focus:outline-none">
           <option value="admin" <?= $user['role'] === 'admin' ? 'selected' : '' ?>>🛡️ Admin</option>
+          <option value="manager" <?= $user['role'] === 'manager' ? 'selected' : '' ?>>👨‍💼 Manager</option>
           <option value="field" <?= $user['role'] === 'field' ? 'selected' : '' ?>>🧑‍💼 Field Officer</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm text-gray-600">แผนกหลัก</label>
+        <select name="department_id" class="w-full px-3 py-2 border rounded" required>
+          <?php
+          $departments->data_seek(0);
+          while ($d = $departments->fetch_assoc()):
+          ?>
+            <option value="<?= $d['id'] ?>" <?= ($user['department_id'] == $d['id']) ? 'selected' : '' ?>>
+              <?= htmlspecialchars($d['name']) ?>
+            </option>
+          <?php endwhile; ?>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm text-gray-600">สามารถเห็นงานของแผนก (กด Ctrl เพื่อเลือกหลายอัน)</label>
+        <select name="visible_departments[]" multiple class="w-full px-3 py-2 border rounded h-32">
+          <?php
+          $departments->data_seek(0);
+          while ($d = $departments->fetch_assoc()):
+          ?>
+            <option value="<?= $d['id'] ?>" <?= in_array($d['id'], $visible_ids) ? 'selected' : '' ?>>
+              <?= htmlspecialchars($d['name']) ?>
+            </option>
+          <?php endwhile; ?>
         </select>
       </div>
 

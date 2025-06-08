@@ -68,6 +68,5 @@ $users_count = $conn->query("SELECT COUNT(*) as total FROM users WHERE role = 'f
     </div>
 
   </div>
-
 </body>
 </html>

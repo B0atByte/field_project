@@ -3,57 +3,59 @@ session_start();
 if (!in_array($_SESSION['user']['role'], ['field', 'admin'])) {
     die("Unauthorized");
 }
+
 include '../config/db.php';
 
 $user_id = $_SESSION['user']['id'];
 $job_id = $_POST['job_id'];
+$result = $_POST['result'] ?? 'ไม่ระบุ';
 $note = $_POST['note'];
 $gps = $_POST['gps'];
+$log_time = $_POST['log_time'] ?? date("Y-m-d H:i:s");
 $images = [];
 
 if (!is_dir('../uploads/job_photos')) {
     mkdir('../uploads/job_photos', 0777, true);
 }
 
-// จัดการรูปภาพ
+// 📸 จัดการรูปภาพ
 if (!empty($_FILES['images']['name'][0])) {
     foreach ($_FILES['images']['tmp_name'] as $key => $tmp_name) {
         $filename = time() . '_' . basename($_FILES['images']['name'][$key]);
         $target_path = '../uploads/job_photos/' . $filename;
-
         if (move_uploaded_file($tmp_name, $target_path)) {
             $images[] = $filename;
         }
     }
 }
 
-// บันทึกลงตาราง job_logs
-$stmt = $conn->prepare("INSERT INTO job_logs (job_id, user_id, note, gps, images) VALUES (?, ?, ?, ?, ?)");
 $img_json = json_encode($images, JSON_UNESCAPED_UNICODE);
-$stmt->bind_param("iisss", $job_id, $user_id, $note, $gps, $img_json);
-$stmt->execute();
 
-// อัปเดต job ว่าเสร็จแล้ว
+// ✅ บันทึกลง job_logs
+$stmt = $conn->prepare("INSERT INTO job_logs (job_id, user_id, result, note, gps, images, log_time) VALUES (?, ?, ?, ?, ?, ?, ?)");
+$stmt->bind_param("issssss", $job_id, $user_id, $result, $note, $gps, $img_json, $log_time);
+$stmt->execute();
+$stmt->close();
+
+// ✅ อัปเดตสถานะงาน
 $conn->query("UPDATE jobs SET status = 'completed' WHERE id = $job_id");
 
-// ดึงข้อมูล job สำหรับแจ้งเตือน
-$job_result = $conn->query("SELECT contract_number, customer_name, customer_address FROM jobs WHERE id = $job_id");
-$job = $job_result->fetch_assoc();
+// ✅ ดึงข้อมูลสำหรับแจ้งเตือน
+$job_result = $conn->query("SELECT contract_number, location_info, province FROM jobs WHERE id = $job_id");
+$job = $job_result && $job_result->num_rows > 0 ? $job_result->fetch_assoc() : ['contract_number' => '-', 'location_info' => '-', 'province' => '-'];
 
-// ส่งแจ้งเตือน Discord
-function sendToDiscord($job, $note, $gps, $images) {
+// ✅ ส่งแจ้งเตือน Discord
+function sendToDiscord($job, $note, $gps, $images, $result) {
     $webhookUrl = "https://discord.com/api/webhooks/1372323356715778119/Ew1itSE--T_bYsggb3nl8kQ7MG2cNFaShBkxu_XZkir_smpOBWWnBUnRygvu5dmkogO4";
 
     $gpsLink = "https://www.google.com/maps?q=" . urlencode($gps);
-
     $content = "\u2728 **ลงพื้นที่ภาคสนามสำเร็จแล้ว** \u2728\n"
         . "\n**เลขที่สัญญา:** `{$job['contract_number']}`"
-        . "\n**ลูกค้า:** {$job['customer_name']}"
-        . "\n**ที่อยู่:** {$job['customer_address']}"
-        . "\n**ผลการลงพื้นที่:** {$note}"
+        . "\n**พื้นที่:** {$job['location_info']} ({$job['province']})"
+        . "\n**ผลการลงพื้นที่:** {$result}"
+        . "\n**สรุป:** {$note}"
         . "\n**พิกัด GPS:** {$gps}\n🌍 [$gpsLink]($gpsLink)";
 
-    // เพิ่มลิงก์รูปถ้ามี
     if (!empty($images)) {
         foreach ($images as $img) {
             $img_url = "http://" . $_SERVER['HTTP_HOST'] . "/field_project/uploads/job_photos/" . $img;
@@ -61,7 +63,7 @@ function sendToDiscord($job, $note, $gps, $images) {
         }
     }
 
-    $data = json_encode(["content" => $content]);
+    $data = json_encode(["content" => $content], JSON_UNESCAPED_UNICODE);
 
     $ch = curl_init($webhookUrl);
     curl_setopt($ch, CURLOPT_POST, true);
@@ -72,7 +74,8 @@ function sendToDiscord($job, $note, $gps, $images) {
     curl_close($ch);
 }
 
-sendToDiscord($job, $note, $gps, $images);
+sendToDiscord($job, $note, $gps, $images, $result);
 
-echo "<script>alert('บันทึกผลงานสำเร็จ'); window.location.href='field.php';</script>";
+// ✅ กลับไปหน้า field.php
+echo "<script>alert('✅ บันทึกผลงานสำเร็จ'); window.location.href='field.php';</script>";
 ?>

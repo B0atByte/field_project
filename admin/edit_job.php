@@ -26,51 +26,68 @@ $users = $conn->query("SELECT id, name FROM users WHERE role = 'field'");
 $updated = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $contract_number = $_POST['contract_number'];
-    $customer_name = $_POST['customer_name'];
-    $customer_address = $_POST['customer_address'];
-    $customer_phone = $_POST['customer_phone'];
-    $car_info = $_POST['car_info'];
-    $debt_amount = $_POST['debt_amount'];
-    $product = $_POST['product'];
-    $location_info = $_POST['location_info'];
-    $zone = $_POST['zone'];
-    $due_date = $_POST['due_date'];
-    $overdue_period = $_POST['overdue_period'];
-    $brand = $_POST['brand'];
-    $model = $_POST['model'];
-    $color = $_POST['color'];
-    $plate = $_POST['plate'];
-    $province = $_POST['province'];
-    $os = $_POST['os'];
-    $assigned_to = $_POST['assigned_to'];
-    $status = $_POST['status'];
-    $job_date = $_POST['job_date'];
+    $fields = [
+        'contract_number' => 'เลขสัญญา',
+        'product' => 'ผลิตภัณฑ์',
+        'location_info' => 'ข้อมูลพื้นที่',
+        'zone' => 'โซน',
+        'due_date' => 'ครบกำหนด',
+        'overdue_period' => 'ระยะเวลาค้าง',
+        'model' => 'รุ่น',
+        'color' => 'สี',
+        'plate' => 'ทะเบียน',
+        'province' => 'จังหวัด',
+        'os' => 'ยอดคงเหลือ OS',
+        'assigned_to' => 'ผู้รับงาน',
+        'status' => 'สถานะ'
+    ];
 
-    // อัปเดตงาน
-    $stmt = $conn->prepare("UPDATE jobs SET 
-        contract_number=?, customer_name=?, customer_address=?, customer_phone=?, 
-        car_info=?, debt_amount=?, product=?, location_info=?, zone=?, due_date=?, 
-        overdue_period=?, brand=?, model=?, color=?, plate=?, province=?, os=?, 
-        assigned_to=?, status=?, created_at=?
-        WHERE id=?");
+    $changes = [];
 
-    $stmt->bind_param("sssssdssssssssssssssi", 
-        $contract_number, $customer_name, $customer_address, $customer_phone,
-        $car_info, $debt_amount, $product, $location_info, $zone, $due_date,
-        $overdue_period, $brand, $model, $color, $plate, $province, $os,
-        $assigned_to, $status, $job_date, $id);
+    foreach ($fields as $key => $label) {
+        $newValue = $_POST[$key];
+        $oldValue = $job[$key];
 
-    $stmt->execute();
+        // แปลงชื่อ user หากเป็น assigned_to
+        if ($key === 'assigned_to') {
+            $oldUser = $conn->query("SELECT name FROM users WHERE id = '$oldValue'")->fetch_assoc()['name'] ?? '-';
+            $newUser = $conn->query("SELECT name FROM users WHERE id = '$newValue'")->fetch_assoc()['name'] ?? '-';
+            if ($oldValue != $newValue) {
+                $changes[] = "$label: `$oldUser` → `$newUser`";
+            }
+        } else {
+            if ($oldValue != $newValue) {
+                $changes[] = "$label: `$oldValue` → `$newValue`";
+            }
+        }
 
-    // ✅ เพิ่มบันทึก Log การแก้ไข
-    $admin_id = $_SESSION['user']['id'];
-    $summary = "แก้ไขงานโดย Admin ID: $admin_id, งาน ID: $id";
-    $log_stmt = $conn->prepare("INSERT INTO job_edit_logs (job_id, edited_by, change_summary) VALUES (?, ?, ?)");
-    $log_stmt->bind_param("iis", $id, $admin_id, $summary);
-    $log_stmt->execute();
+        // ตั้งค่าตัวแปร
+        $$key = $newValue;
+    }
 
-    $updated = true;
+    // ถ้ามีการเปลี่ยนแปลง ค่อยอัปเดต
+    if (count($changes)) {
+        $stmt = $conn->prepare("UPDATE jobs SET 
+            contract_number=?, product=?, location_info=?, zone=?, due_date=?, 
+            overdue_period=?, model=?, color=?, plate=?, province=?, os=?, 
+            assigned_to=?, status=? WHERE id=?");
+
+        $stmt->bind_param("sssssssssssssi", 
+            $contract_number, $product, $location_info, $zone, $due_date,
+            $overdue_period, $model, $color, $plate, $province, $os,
+            $assigned_to, $status, $id);
+
+        $stmt->execute();
+
+        // เพิ่ม log
+        $admin_id = $_SESSION['user']['id'];
+        $summary = "📝 รายการแก้ไข: " . implode(', ', $changes);
+        $log_stmt = $conn->prepare("INSERT INTO job_edit_logs (job_id, edited_by, change_summary) VALUES (?, ?, ?)");
+        $log_stmt->bind_param("iis", $id, $admin_id, $summary);
+        $log_stmt->execute();
+
+        $updated = true;
+    }
 }
 ?>
 
@@ -84,9 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body class="bg-gray-100 min-h-screen flex justify-center items-start p-6">
 
-  <div class="bg-white max-w-5xl w-full shadow-lg rounded-xl p-6 space-y-6 relative">
-
-    <!-- 🔙 ปุ่มกลับมุมขวา -->
+  <div class="bg-white max-w-4xl w-full shadow-lg rounded-xl p-6 space-y-6 relative">
     <div class="absolute top-6 right-6">
       <a href="jobs.php" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition">🔙 กลับหน้ารายการงาน</a>
     </div>
@@ -95,28 +110,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <form method="post" class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <input type="text" name="contract_number" value="<?= htmlspecialchars($job['contract_number']) ?>" class="border px-3 py-2 rounded w-full" placeholder="เลขสัญญา" required>
-      <input type="text" name="customer_name" value="<?= htmlspecialchars($job['customer_name']) ?>" class="border px-3 py-2 rounded w-full" placeholder="ชื่อลูกค้า" required>
-      <input type="text" name="customer_address" value="<?= htmlspecialchars($job['customer_address']) ?>" class="border px-3 py-2 rounded w-full" placeholder="ที่อยู่">
-      <input type="text" name="customer_phone" value="<?= htmlspecialchars($job['customer_phone']) ?>" class="border px-3 py-2 rounded w-full" placeholder="เบอร์โทร">
-      <input type="text" name="car_info" value="<?= htmlspecialchars($job['car_info']) ?>" class="border px-3 py-2 rounded w-full" placeholder="ข้อมูลรถ">
-      <input type="number" step="any" name="debt_amount" value="<?= htmlspecialchars($job['debt_amount']) ?>" class="border px-3 py-2 rounded w-full" placeholder="ยอดหนี้">
       <input type="text" name="product" value="<?= htmlspecialchars($job['product']) ?>" class="border px-3 py-2 rounded w-full" placeholder="Product">
       <input type="text" name="location_info" value="<?= htmlspecialchars($job['location_info']) ?>" class="border px-3 py-2 rounded w-full" placeholder="ข้อมูลพื้นที่">
       <input type="text" name="zone" value="<?= htmlspecialchars($job['zone']) ?>" class="border px-3 py-2 rounded w-full" placeholder="โซน">
       <input type="date" name="due_date" value="<?= htmlspecialchars($job['due_date']) ?>" class="border px-3 py-2 rounded w-full">
       <input type="text" name="overdue_period" value="<?= htmlspecialchars($job['overdue_period']) ?>" class="border px-3 py-2 rounded w-full" placeholder="Overdue">
-      <input type="text" name="brand" value="<?= htmlspecialchars($job['brand']) ?>" class="border px-3 py-2 rounded w-full" placeholder="ยี่ห้อ">
       <input type="text" name="model" value="<?= htmlspecialchars($job['model']) ?>" class="border px-3 py-2 rounded w-full" placeholder="รุ่น">
       <input type="text" name="color" value="<?= htmlspecialchars($job['color']) ?>" class="border px-3 py-2 rounded w-full" placeholder="สี">
       <input type="text" name="plate" value="<?= htmlspecialchars($job['plate']) ?>" class="border px-3 py-2 rounded w-full" placeholder="ทะเบียน">
       <input type="text" name="province" value="<?= htmlspecialchars($job['province']) ?>" class="border px-3 py-2 rounded w-full" placeholder="จังหวัด">
-      <input type="text" name="os" value="<?= htmlspecialchars($job['os']) ?>" class="border px-3 py-2 rounded w-full" placeholder="OS">
+      <input type="text" name="os" value="<?= htmlspecialchars($job['os']) ?>" class="border px-3 py-2 rounded w-full" placeholder="ยอดคงเหลือ OS">
 
-      <!-- 👨‍💼 ผู้รับผิดชอบ -->
+      <!-- ผู้รับผิดชอบ -->
       <div class="md:col-span-2">
         <label class="block text-sm font-medium text-gray-700 mb-1">ผู้รับผิดชอบ</label>
         <select name="assigned_to" class="border px-3 py-2 rounded w-full">
-          <?php while ($u = $users->fetch_assoc()): ?>
+          <?php
+          $users = $conn->query("SELECT id, name FROM users WHERE role = 'field'");
+          while ($u = $users->fetch_assoc()):
+          ?>
             <option value="<?= $u['id'] ?>" <?= $u['id'] == $job['assigned_to'] ? 'selected' : '' ?>>
               <?= htmlspecialchars($u['name']) ?>
             </option>
@@ -124,19 +136,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </select>
       </div>
 
-      <!-- ✅ สถานะ -->
+      <!-- สถานะ -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">สถานะ</label>
         <select name="status" class="border px-3 py-2 rounded w-full">
           <option value="pending" <?= ($job['status'] ?? '') === 'pending' ? 'selected' : '' ?>>🟡 ยังไม่เสร็จ</option>
           <option value="completed" <?= ($job['status'] ?? '') === 'completed' ? 'selected' : '' ?>>✅ เสร็จแล้ว</option>
         </select>
-      </div>
-
-      <!-- 📅 วันที่เริ่ม -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">วันที่เริ่มงาน</label>
-        <input type="datetime-local" name="job_date" value="<?= date('Y-m-d\TH:i', strtotime($job['created_at'])) ?>" class="border px-3 py-2 rounded w-full">
       </div>
 
       <div class="col-span-2 text-right mt-4">
@@ -149,8 +155,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <script>
     Swal.fire({
       icon: 'success',
-      title: 'บันทึกสำเร็จ!',
-      text: 'ข้อมูลได้รับการอัปเดตแล้ว',
+      title: '✅ บันทึกสำเร็จ',
+      text: 'คุณได้ทำการอัปเดตข้อมูลงานเรียบร้อยแล้ว',
       confirmButtonText: 'ตกลง',
       confirmButtonColor: '#3085d6'
     }).then(() => {

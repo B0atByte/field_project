@@ -24,12 +24,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (password_verify($password, $user['password'])) {
             $_SESSION['user'] = $user;
 
-            if ($user['role'] === 'admin') {
-                header("Location: ../dashboard/admin.php");
-            } elseif ($user['role'] === 'field') {
-                header("Location: ../dashboard/field.php");
-            } else {
-                echo "ไม่สามารถเข้าสู่ระบบได้: ไม่มี role ที่รองรับ";
+            // ✅ ส่งตาม role
+            switch ($user['role']) {
+                case 'admin':
+                    header("Location: ../dashboard/admin.php");
+                    break;
+                case 'field':
+                    header("Location: ../dashboard/field.php");
+                    break;
+                case 'manager':
+                    header("Location: ../dashboard/manager.php"); // หรือใช้ admin.php ถ้ายังไม่มี
+                    break;
+                default:
+                    $_SESSION['message'] = "❌ ไม่สามารถเข้าสู่ระบบได้: บทบาทไม่ถูกต้อง";
+                    header("Location: ../index.php");
+                    break;
             }
             exit;
         }
