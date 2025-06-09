@@ -10,7 +10,6 @@ include '../config/db.php';
 $job_id = $_GET['id'] ?? null;
 $user_id = $_SESSION['user']['id'];
 
-// ดึงข้อมูล job + user
 $stmt = $conn->prepare("SELECT j.*, u.name AS imported_name FROM jobs j LEFT JOIN users u ON j.imported_by = u.id WHERE j.id = ?");
 $stmt->bind_param("i", $job_id);
 $stmt->execute();
@@ -44,12 +43,12 @@ $stmt_log->close();
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     img:hover { transform: scale(1.05); }
+    #map { width: 100%; height: 400px; border-radius: 6px; border: 1px solid #ccc; }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen p-4 sm:p-6">
 <div class="max-w-5xl mx-auto bg-white shadow-md rounded-xl p-6 space-y-6">
 
-  <!-- ปุ่มกลับ -->
   <div class="mb-2">
     <a href="field.php" class="text-blue-600 font-semibold hover:underline flex items-center">
       <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -60,11 +59,14 @@ $stmt_log->close();
 
   <h2 class="text-xl font-bold text-gray-800 mb-4">📋 รายละเอียดงานภาคสนาม</h2>
 
-  <!-- 🗂️ ข้อมูลงาน -->
   <div class="bg-gray-50 p-4 rounded-lg shadow-inner space-y-2 text-sm text-gray-700 mb-4">
     <h3 class="font-semibold text-blue-700 text-md mb-2">🗂️ ข้อมูลงาน</h3>
     <div class="grid sm:grid-cols-2 gap-4">
-      <p><strong>เลขที่สัญญา:</strong> <?= htmlspecialchars($job['contract_number']) ?></p>
+      <div class="flex items-center gap-2">
+        <strong>เลขที่สัญญา:</strong>
+        <span><?= htmlspecialchars($job['contract_number']) ?></span>
+        <button type="button" onclick="copyText('<?= addslashes($job['contract_number']) ?>')" class="text-sm bg-blue-100 hover:bg-blue-200 text-blue-800 px-2 py-1 rounded">📋 คัดลอก</button>
+      </div>
       <p><strong>ชื่อสินค้า:</strong> <?= htmlspecialchars($job['product']) ?></p>
       <p><strong>วันครบกำหนด:</strong> <?= htmlspecialchars($job['due_date']) ?></p>
       <p><strong>จำนวนวันครบกำหนด:</strong> <?= htmlspecialchars($job['overdue_period']) ?></p>
@@ -72,11 +74,14 @@ $stmt_log->close();
     </div>
   </div>
 
-  <!-- 🚘 ข้อมูลรถ / ลูกค้า -->
   <div class="bg-gray-50 p-4 rounded-lg shadow-inner space-y-2 text-sm text-gray-700 mb-4">
     <h3 class="font-semibold text-blue-700 text-md mb-2">🚘 ข้อมูลรถ / ลูกค้า</h3>
     <div class="grid sm:grid-cols-2 gap-4">
-      <p><strong>ชื่อ-สกุล(ลูกค้า):</strong> <?= htmlspecialchars($job['location_info']) ?></p>
+      <div class="flex items-center gap-2">
+        <strong>ชื่อ-สกุล(ลูกค้า):</strong>
+        <span><?= htmlspecialchars($job['location_info']) ?></span>
+        <button type="button" onclick="copyText('<?= addslashes($job['location_info']) ?>')" class="text-sm bg-blue-100 hover:bg-blue-200 text-blue-800 px-2 py-1 rounded">📋 คัดลอก</button>
+      </div>
       <p><strong>ข้อมูลพื้นที่:</strong> <?= htmlspecialchars($job['location_area']) ?></p>
       <p><strong>โซน:</strong> <?= htmlspecialchars($job['zone']) ?></p>
       <p><strong>ยี่ห้อ:</strong> <?= htmlspecialchars($job['model']) ?></p>
@@ -87,19 +92,23 @@ $stmt_log->close();
     </div>
   </div>
 
-  <!-- 🔍 ตรวจสอบ log -->
-  <?php if ($has_log > 0): ?>
+  <?php if ($has_log > 0 && $can_submit): ?>
     <div class="text-center">
-      <a href="../admin/map.php?job_id=<?= $job_id ?>" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded shadow">
-        🕵️‍♂️ เคยมีคนวิ่งงานนี้แล้ว ดูแผนที่
+      <a href="../admin/map.php?job_id=<?= $job['id'] ?>" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded shadow">
+        🕵️‍♂️ เคสนี้มีประวัติการวิ่ง คลิกเพื่อดูในแผนที่
       </a>
+    </div>
+  <?php elseif ($has_log > 0): ?>
+    <div class="text-center">
+      <button disabled class="bg-gray-400 text-white px-4 py-2 rounded shadow cursor-not-allowed">
+        🛑 ต้องรับงานก่อน ถึงจะดูแผนที่ได้
+      </button>
     </div>
   <?php endif; ?>
 
-  <!-- 📥 รับงาน / บันทึกผล -->
   <?php if (!$can_submit): ?>
     <div class="text-center mt-6">
-      <button onclick="confirmAcceptJob(<?= $job_id ?>)" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded">
+      <button onclick="confirmAcceptJob(<?= $job['id'] ?>)" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded">
         📥 รับงานนี้
       </button>
     </div>
@@ -128,7 +137,7 @@ $stmt_log->close();
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">📷 รูปถ่าย</label>
         <input type="file" name="images[]" multiple accept="image/*" class="w-full" onchange="validateFileCount(this)">
-        <small class="text-gray-500">อัปโหลดได้ไม่เกิน 5 รูป</small>
+        <small class="text-gray-500">อัปโหลดได้ไม่เกิน 4 รูป</small>
       </div>
 
       <div>
@@ -139,7 +148,7 @@ $stmt_log->close();
         </div>
       </div>
 
-      <div id="map" class="w-full h-96 rounded border mt-4"></div>
+      <div id="map" class="mt-4"></div>
 
       <div class="pt-4 text-center">
         <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded font-semibold">
@@ -190,7 +199,7 @@ function getLocation() {
 
 let map;
 let marker;
-window.initMap = function () {
+function initMap() {
   const defaultPos = { lat: 13.736717, lng: 100.523186 };
   map = new google.maps.Map(document.getElementById("map"), {
     zoom: 14,
@@ -206,20 +215,31 @@ window.initMap = function () {
     const gps = pos.lat().toFixed(6) + "," + pos.lng().toFixed(6);
     document.getElementById("gps").value = gps;
   });
-};
-window.setMapMarker = function(lat, lng) {
+}
+
+function setMapMarker(lat, lng) {
   const pos = new google.maps.LatLng(lat, lng);
   map.setCenter(pos);
   marker.setPosition(pos);
-};
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    Swal.fire("📋 คัดลอกแล้ว", text, "success");
+  }).catch(() => {
+    Swal.fire("❌ ล้มเหลว", "ไม่สามารถคัดลอกได้", "error");
+  });
+}
 
 function validateFileCount(input) {
-  if (input.files.length > 5) {
-    Swal.fire("❌ เกินจำนวน", "อัปโหลดได้ไม่เกิน 5 รูป", "error");
+  if (input.files.length > 4) {
+    Swal.fire("❌ เกินจำนวน", "อัปโหลดได้ไม่เกิน 4 รูป", "error");
     input.value = "";
   }
 }
 </script>
-Key
+
+<!-- ✅ Key นี้เปลี่ยนเป็นของคุณเองหากหมดอายุ -->
+<!-- KEY -->
 </body>
 </html>
