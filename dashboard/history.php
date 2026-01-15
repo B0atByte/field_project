@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../includes/session_config.php';
 if ($_SESSION['user']['role'] !== 'field') {
     header("Location: ../index.php");
     exit;

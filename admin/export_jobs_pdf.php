@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../includes/session_config.php';
 if (!isset($_SESSION['user'])) {
     die("Unauthorized");
 }
@@ -11,96 +11,26 @@ use Mpdf\Mpdf;
 use Mpdf\Config\ConfigVariables;
 use Mpdf\Config\FontVariables;
 
-// รับค่ากรอง
-$start = $_GET['start'] ?? '';
-$end = $_GET['end'] ?? '';
-$keyword = $_GET['keyword'] ?? '';
-$assigned_to = $_GET['assigned_to'] ?? '';
-$month = $_GET['month'] ?? '';
+$job_id = $_GET['id'] ?? null;
+if (!$job_id) die("Missing job ID");
 
-$current_user = $_SESSION['user'];
-$user_id = $current_user['id'];
-$role = $current_user['role'];
-
-// เข้าถึงแผนกที่มองเห็น
-$dept_ids = [];
-$stmt = $conn->prepare("SELECT department_id FROM users WHERE id = ?");
-$stmt->bind_param("i", $user_id);
+// ดึงข้อมูลล่าสุดจาก job_logs เท่านั้น
+$stmt = $conn->prepare("SELECT j.*, 
+    l.note, l.result, l.gps, l.images, l.created_at AS log_time,
+    u1.name AS officer_name, d.name AS department_name
+    FROM jobs j 
+    LEFT JOIN job_logs l ON j.id = l.job_id AND l.created_at = (
+        SELECT MAX(created_at) FROM job_logs WHERE job_id = j.id
+    )
+    LEFT JOIN users u1 ON j.assigned_to = u1.id
+    LEFT JOIN departments d ON j.department_id = d.id
+    WHERE j.id = ?");
+$stmt->bind_param("i", $job_id);
 $stmt->execute();
-$stmt->bind_result($current_dept);
-$stmt->fetch();
+$job = $stmt->get_result()->fetch_assoc();
 $stmt->close();
-$dept_ids[] = $current_dept;
+if (!$job) die("ไม่พบข้อมูล");
 
-if ($role !== 'admin') {
-    $stmt = $conn->prepare("SELECT to_department_id FROM department_visibility WHERE from_department_id = ?");
-    $stmt->bind_param("i", $current_dept);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    while ($row = $res->fetch_assoc()) {
-        $dept_ids[] = $row['to_department_id'];
-    }
-}
-
-// WHERE เงื่อนไข
-$where = '1=1';
-$params = [];
-$types = '';
-
-if ($start && $end) {
-    $where .= " AND DATE(j.due_date) BETWEEN ? AND ?";
-    $params[] = $start;
-    $params[] = $end;
-    $types .= 'ss';
-}
-if ($keyword !== '') {
-    $where .= " AND (
-        j.contract_number LIKE ?
-        OR j.product LIKE ?
-        OR j.location_info LIKE ?
-        OR j.model LIKE ?
-        OR j.plate LIKE ?
-    )";
-    for ($i = 0; $i < 5; $i++) {
-        $params[] = "%$keyword%";
-        $types .= 's';
-    }
-}
-if ($assigned_to !== '') {
-    $where .= " AND j.assigned_to = ?";
-    $params[] = $assigned_to;
-    $types .= 's';
-}
-if ($month) {
-    $where .= " AND DATE_FORMAT(j.due_date, '%Y-%m') = ?";
-    $params[] = $month;
-    $types .= 's';
-}
-if ($role !== 'admin') {
-    $where .= " AND j.department_id IN (" . implode(',', array_fill(0, count($dept_ids), '?')) . ")";
-    foreach ($dept_ids as $id) {
-        $params[] = $id;
-        $types .= 's';
-    }
-}
-
-// ดึงข้อมูล
-$sql = "SELECT j.*, u1.name AS officer_name, u2.name AS imported_by_name, d.name AS department_name
-        FROM jobs j
-        LEFT JOIN users u1 ON j.assigned_to = u1.id
-        LEFT JOIN users u2 ON j.imported_by = u2.id
-        LEFT JOIN departments d ON j.department_id = d.id
-        WHERE $where
-        ORDER BY j.due_date DESC";
-
-$stmt = $conn->prepare($sql);
-if (!empty($params)) {
-    $stmt->bind_param($types, ...$params);
-}
-$stmt->execute();
-$result = $stmt->get_result();
-
-// เรียกใช้ฟอนต์ไทย
 $defaultConfig = (new ConfigVariables())->getDefaults();
 $fontDirs = $defaultConfig['fontDir'];
 
@@ -113,53 +43,81 @@ $mpdf = new Mpdf([
         'sarabun' => [
             'R' => 'Sarabun-Regular.ttf',
             'B' => 'Sarabun-Bold.ttf',
-            'I' => 'Sarabun-Italic.ttf',
-            'BI' => 'Sarabun-BoldItalic.ttf',
         ]
     ]),
     'default_font' => 'sarabun',
     'format' => 'A4'
 ]);
 
-// HTML Template
 $html = '<style>
 body { font-family: sarabun; font-size: 14px; }
-table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-th, td { border: 1px solid #333; padding: 6px; text-align: left; }
-th { background-color: #f2f2f2; }
-h2 { text-align: center; margin-bottom: 20px; }
+.label { font-weight: bold; font-size: 14px; }
+.value { font-weight: normal; font-size: 14px; }
+.section-title {
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+.img-table td { padding: 5px; }
+img.photo { width: 250px; height: auto; }
 </style>';
 
-$html .= '<h2>📋 รายงานรายการงานภาคสนาม</h2>';
-$html .= '<table>
-<thead>
-<tr>
-  <th>สัญญา</th>
-  <th>ชื่อผู้เช่าซื้อ</th>
-  <th>จังหวัด</th>
-  <th>Product</th>
-  <th>รุ่น</th>
-  <th>OS คงเหลือ</th>
-  <th>ครบกำหนด</th>
-  <th>ผู้รับงาน</th>
-</tr>
-</thead>
-<tbody>';
+$html .= '<div class="section-title">รายงานผลการลงพื้นที่</div>';
 
-while ($row = $result->fetch_assoc()) {
-    $html .= '<tr>
-        <td>' . htmlspecialchars($row['contract_number']) . '</td>
-        <td>' . htmlspecialchars($row['location_info']) . '</td>
-        <td>' . htmlspecialchars($row['province']) . '</td>
-        <td>' . htmlspecialchars($row['product']) . '</td>
-        <td>' . htmlspecialchars($row['model']) . '</td>
-        <td>' . number_format($row['os'], 2) . '</td>
-        <td>' . htmlspecialchars($row['due_date']) . '</td>
-        <td>' . htmlspecialchars($row['officer_name'] ?? '-') . '</td>
-    </tr>';
+$html .= '<div><span class="label">เลขที่สัญญา:</span> <span class="value">' . htmlspecialchars($job['contract_number']) . '</span>
+    &nbsp;&nbsp;&nbsp;&nbsp;
+    <span class="label">เช่าซื้อชื่อ:</span> <span class="value">' . htmlspecialchars($job['location_info']) . '</span>
+    &nbsp;&nbsp;&nbsp;&nbsp;
+    <span class="label">กลุ่มงาน:</span> <span class="value">' . htmlspecialchars($job['product']) . '</span>
+</div><br>';
+
+$html .= '<div><span class="label">ค้างชำระปัจจุบัน:</span> <span class="value">' . htmlspecialchars($job['overdue_period']) . ' งวด, ' . number_format((float)($job['os'] ?? 0), 2) . ' บาท</span></div>';
+
+$html .= '<div><span class="label">ทีม:</span> <span class="value">บ.บาร์เกน พ้อยท์ จำกัด</span>
+    &nbsp;&nbsp;&nbsp;&nbsp;
+    <span class="label">วันที่ลงพื้นที่:</span> <span class="value">' . date('j/n/Y', strtotime($job['log_time'])) . '</span>
+</div><br>';
+
+$html .= '<div><span class="label">สถานที่ลง:</span> <span class="value">' . htmlspecialchars($job['location_area'] ?? '-') . '</span></div><br>';
+
+$html .= '<div><span class="label">ผลการลงพื้นที่:</span><br><span class="value">' . nl2br(htmlspecialchars($job['result'] ?? '-')) . '</span></div><br>';
+
+$html .= '<div><span class="label">หมายเหตุ:</span><br><span class="value">' . nl2br(htmlspecialchars($job['note'] ?? '-')) . '</span></div><br>';
+
+$html .= '<div><span class="label">พิกัด:</span><br><span class="value">' . htmlspecialchars($job['gps'] ?? '-') . '</span></div><br>';
+
+if (!empty($job['images'])) {
+    $html .= '<div class="label" style="text-align:center; margin-top:20px;">รูปภาพประกอบ</div><br>';
+    $images = json_decode($job['images'], true);
+
+    require_once __DIR__ . '/../includes/image_optimizer.php';
+
+    $html .= '<table class="img-table" align="center">';
+    $col = 0;
+    foreach ($images as $img) {
+        $paths = ImageOptimizer::getImagePaths($img);
+        $imgPath = '../uploads/job_photos/' . $paths['original'];
+        if (file_exists($imgPath)) {
+            if ($col % 2 == 0) {
+                $html .= '<tr>';
+            }
+            $base64 = base64_encode(file_get_contents($imgPath));
+            $src = 'data:image/jpeg;base64,' . $base64;
+            $html .= '<td><img src="' . $src . '" class="photo"></td>';
+            $col++;
+            if ($col % 2 == 0) {
+                $html .= '</tr>';
+            }
+        }
+    }
+    if ($col % 2 != 0) {
+        $html .= '<td></td></tr>';
+    }
+    $html .= '</table>';
 }
-$html .= '</tbody></table>';
 
 $mpdf->WriteHTML($html);
-$mpdf->Output('job_report_' . date('Ymd_His') . '.pdf', 'D');
+$mpdf->Output('job_detail_' . $job['contract_number'] . '.pdf', 'D');
 exit;
