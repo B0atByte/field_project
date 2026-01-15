@@ -1,0 +1,40 @@
+# Environment Variables - ห้าม commit!
+.env
+
+# Vendor
+/vendor/
+
+# Uploads
+/uploads/job_photos/*.jpg
+/uploads/job_photos/*.png
+/uploads/job_photos/*.jpeg
+/uploads/job_photos/*.gif
+/uploads/job_photos/*.avif
+
+# Composer
+composer.phar
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+/logs/
+
+# Temporary files
+/tmp/
+/temp/
+
+# Cache
+/cache/
+/vendor/
+/uploads/
+/.env
