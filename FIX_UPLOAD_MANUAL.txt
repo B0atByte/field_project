@@ -1,0 +1,17 @@
+# คำสั่งแก้ไขปัญหารูปภาพไม่ขึ้น (รันทีละบรรทัด)
+
+# 1. เข้าไปใน Docker Container
+docker exec -it field_php bash
+
+# 2. สร้างโฟลเดอร์และให้สิทธิ์ (รันใน Container)
+mkdir -p /var/www/html/uploads/job_photos
+chmod -R 777 /var/www/html/uploads
+chown -R www-data:www-data /var/www/html/uploads
+
+# 3. ออกจาก Container
+exit
+
+# 4. แก้ไข Database (รันนอก Container)
+docker exec -i field_db mysql -uroot -proot field_project -e "ALTER TABLE job_logs MODIFY COLUMN result VARCHAR(255) NULL;"
+
+# เสร็จแล้ว! ลองส่งงานใหม่อีกครั้ง

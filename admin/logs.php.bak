@@ -1,0 +1,313 @@
+<?php
+require_once __DIR__ . '/../includes/session_config.php';
+if ($_SESSION['user']['role'] !== 'admin') {
+    header("Location: ../index.php");
+    exit;
+}
+include '../config/db.php';
+
+// Generate CSRF Token
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+// Handle POST requests for clearing logs
+$alert_message = '';
+$alert_type = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_logs'])) {
+    // Verify CSRF token
+    if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+        $alert_message = 'CSRF token validation failed';
+        $alert_type = 'error';
+    } else {
+        // Double-check admin role
+        if ($_SESSION['user']['role'] !== 'admin') {
+            $alert_message = 'ไม่มีสิทธิ์ในการลบ Log (ต้องเป็นผู้ดูแลระบบเท่านั้น)';
+            $alert_type = 'error';
+        } else {
+            $admin_pass = $_POST['admin_password'] ?? '';
+            $admin_id = $_SESSION['user']['id'];
+
+            // Verify admin password
+            $stmt = $conn->prepare("SELECT password FROM users WHERE id = ? AND role = 'admin'");
+            $stmt->bind_param("i", $admin_id);
+            $stmt->execute();
+            $stmt->bind_result($hash);
+            $stmt->fetch();
+            $stmt->close();
+
+            if (!$hash) {
+                $alert_message = 'ไม่พบข้อมูลผู้ดูแลระบบ';
+                $alert_type = 'error';
+            } elseif (!password_verify($admin_pass, $hash)) {
+                $alert_message = 'รหัสผ่านไม่ถูกต้อง';
+                $alert_type = 'error';
+            } else {
+                // Determine which table to clear based on log_type
+                $log_type = $_POST['log_type'] ?? '';
+                $success = false;
+
+                $conn->begin_transaction();
+                try {
+                    switch ($log_type) {
+                        case 'job_edit':
+                            $success = $conn->query("DELETE FROM job_edit_logs");
+                            break;
+                        case 'login':
+                            $success = $conn->query("TRUNCATE TABLE login_logs");
+                            break;
+                        case 'job_deletion':
+                            $success = $conn->query("TRUNCATE TABLE job_deletion_logs");
+                            break;
+                        default:
+                            throw new Exception('ประเภท log ไม่ถูกต้อง');
+                    }
+
+                    if ($success) {
+                        $conn->commit();
+                        $alert_message = 'ล้าง log เรียบร้อยแล้ว';
+                        $alert_type = 'success';
+                    } else {
+                        throw new Exception('เกิดข้อผิดพลาดในการล้าง log');
+                    }
+                } catch (Exception $e) {
+                    $conn->rollback();
+                    $alert_message = $e->getMessage();
+                    $alert_type = 'error';
+                }
+            }
+        }
+    }
+}
+
+// Get selected tab from URL (default: job_edit)
+$active_tab = $_GET['tab'] ?? 'job_edit';
+$allowed_tabs = ['job_edit', 'job_deletion', 'login'];
+if (!in_array($active_tab, $allowed_tabs)) {
+    $active_tab = 'job_edit';
+}
+
+// If there was a POST request, redirect to prevent form resubmission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $_SESSION['alert_message'] = $alert_message;
+    $_SESSION['alert_type'] = $alert_type;
+    header("Location: logs.php?tab=" . $active_tab);
+    exit;
+}
+
+// Retrieve alert from session if exists
+if (isset($_SESSION['alert_message'])) {
+    $alert_message = $_SESSION['alert_message'];
+    $alert_type = $_SESSION['alert_type'];
+    unset($_SESSION['alert_message']);
+    unset($_SESSION['alert_type']);
+}
+
+$page_title = "ระบบจัดการ Logs";
+include '../components/header.php';
+?>
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><?= $page_title ?></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'thai': ['Prompt', 'sans-serif']
+          },
+          colors: {
+            'primary': '#dc2626',
+            'secondary': '#991b1b',
+            'surface': '#f8fafc'
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.6s ease-out',
+            'slide-up': 'slideUp 0.5s ease-out'
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(20px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' }
+            },
+            slideUp: {
+              '0%': { opacity: '0', transform: 'translateY(30px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="font-thai bg-surface min-h-screen">
+
+<div class="flex min-h-screen bg-surface">
+  <!-- Sidebar -->
+  <?php include '../components/sidebar.php'; ?>
+
+  <!-- Main Content -->
+  <div class="flex flex-col flex-1 ml-64">
+    <!-- Header -->
+    <header class="bg-white shadow-lg border-b border-red-100 sticky top-0 z-40">
+      <div class="px-6 py-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+              <svg class="w-7 h-7 mr-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              ระบบจัดการ Logs
+            </h1>
+            <p class="text-sm text-gray-500 mt-1">ติดตามการเปลี่ยนแปลง การลบงาน และกิจกรรมการเข้าสู่ระบบ</p>
+          </div>
+          <div class="flex items-center gap-4">
+            <a href="../dashboard/admin.php" class="inline-flex items-center px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+              </svg>
+              กลับแดชบอร์ด
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Body -->
+    <main class="flex-1 p-6 space-y-6 overflow-y-auto">
+
+      <!-- Tab Navigation -->
+      <section class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 animate-slide-up">
+        <div class="flex flex-wrap gap-3">
+          <button onclick="switchTab('job_edit')"
+                  id="tab-job_edit"
+                  class="tab-button px-6 py-3 rounded-xl font-semibold transition-all duration-300 <?= $active_tab === 'job_edit' ? 'bg-yellow-600 text-white shadow-lg' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' ?>">
+            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+            ประวัติการแก้ไขงาน
+          </button>
+
+          <button onclick="switchTab('job_deletion')"
+                  id="tab-job_deletion"
+                  class="tab-button px-6 py-3 rounded-xl font-semibold transition-all duration-300 <?= $active_tab === 'job_deletion' ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' ?>">
+            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+            ประวัติการลบงาน
+          </button>
+
+          <button onclick="switchTab('login')"
+                  id="tab-login"
+                  class="tab-button px-6 py-3 rounded-xl font-semibold transition-all duration-300 <?= $active_tab === 'login' ? 'bg-teal-600 text-white shadow-lg' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' ?>">
+            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            ประวัติการเข้าสู่ระบบ
+          </button>
+        </div>
+      </section>
+
+      <!-- Alert Messages -->
+      <?php if ($alert_message): ?>
+        <div class="animate-fade-in">
+          <?php if ($alert_type === 'success'): ?>
+            <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl">
+              <div class="flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <span class="font-medium"><?= htmlspecialchars($alert_message) ?></span>
+              </div>
+            </div>
+          <?php else: ?>
+            <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl">
+              <div class="flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                <span class="font-medium"><?= htmlspecialchars($alert_message) ?></span>
+              </div>
+            </div>
+          <?php endif; ?>
+        </div>
+      <?php endif; ?>
+
+      <!-- Content Container -->
+      <div id="log-content">
+        <!-- Content will be loaded dynamically -->
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+let currentTab = '<?= $active_tab ?>';
+
+// Switch between tabs
+function switchTab(tab) {
+  currentTab = tab;
+
+  // Update URL without reload
+  const url = new URL(window.location);
+  url.searchParams.set('tab', tab);
+  window.history.pushState({}, '', url);
+
+  // Update tab button styles
+  document.querySelectorAll('.tab-button').forEach(btn => {
+    btn.classList.remove('bg-yellow-600', 'bg-red-600', 'bg-teal-600', 'text-white', 'shadow-lg');
+    btn.classList.add('bg-gray-100', 'text-gray-700');
+  });
+
+  const activeBtn = document.getElementById(`tab-${tab}`);
+  activeBtn.classList.remove('bg-gray-100', 'text-gray-700');
+  activeBtn.classList.add('text-white', 'shadow-lg');
+
+  if (tab === 'job_edit') {
+    activeBtn.classList.add('bg-yellow-600');
+  } else if (tab === 'job_deletion') {
+    activeBtn.classList.add('bg-red-600');
+  } else {
+    activeBtn.classList.add('bg-teal-600');
+  }
+
+  // Load content
+  loadContent(tab);
+}
+
+// Load content based on tab
+function loadContent(tab) {
+  const contentDiv = document.getElementById('log-content');
+  contentDiv.innerHTML = '<div class="text-center py-12"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div><p class="text-gray-500 mt-4">กำลังโหลดข้อมูล...</p></div>';
+
+  // Fetch content from PHP include files
+  fetch(`logs_content.php?tab=${tab}`)
+    .then(response => response.text())
+    .then(html => {
+      contentDiv.innerHTML = html;
+    })
+    .catch(error => {
+      contentDiv.innerHTML = `<div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl">
+        <p class="font-medium">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>
+        <p class="text-sm">${error.message}</p>
+      </div>`;
+    });
+}
+
+// Load initial content
+document.addEventListener('DOMContentLoaded', function() {
+  loadContent(currentTab);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,163 @@
+<?php
+require_once __DIR__ . '/../includes/session_config.php';
+if (!in_array($_SESSION['user']['role'], ['admin', 'manager'])) {
+    die("Unauthorized");
+}
+
+require_once '../vendor/autoload.php';
+include '../config/db.php';
+
+// Increase execution time and memory limit
+set_time_limit(300); // 5 minutes
+ini_set('memory_limit', '512M');
+
+use PhpOffice\PhpWord\PhpWord;
+use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\Shared\Html;
+
+$job_id = $_POST['job_id'] ?? null;
+$user_id = $_SESSION['user']['id'];
+$role = $_SESSION['user']['role'];
+
+if (!$job_id)
+    die("Missing job ID");
+
+// ดึงข้อมูลจาก jobs + job_logs (เอา log ล่าสุด)
+if (in_array($role, ['admin', 'manager'])) {
+    $stmt = $conn->prepare("SELECT j.*, l.note, l.result, l.gps, l.images, l.created_at AS log_time, j.os,
+        u1.name AS assigned_name
+        FROM jobs j
+        LEFT JOIN (
+            SELECT job_id, note, result, gps, images, created_at
+            FROM job_logs
+            WHERE job_id = ?
+            ORDER BY id DESC
+            LIMIT 1
+        ) l ON j.id = l.job_id
+        LEFT JOIN users u1 ON j.assigned_to = u1.id
+        WHERE j.id = ?");
+    $stmt->bind_param("ii", $job_id, $job_id);
+} else {
+    $stmt = $conn->prepare("SELECT j.*, l.note, l.result, l.gps, l.images, l.created_at AS log_time, j.os,
+        u1.name AS assigned_name
+        FROM jobs j
+        LEFT JOIN (
+            SELECT job_id, note, result, gps, images, created_at
+            FROM job_logs
+            WHERE job_id = ?
+            ORDER BY id DESC
+            LIMIT 1
+        ) l ON j.id = l.job_id
+        LEFT JOIN users u1 ON j.assigned_to = u1.id
+        WHERE j.id = ? AND j.assigned_to = ?");
+    $stmt->bind_param("iii", $job_id, $job_id, $user_id);
+}
+
+$stmt->execute();
+$job = $stmt->get_result()->fetch_assoc();
+$stmt->close();
+if (!$job)
+    die("ไม่พบข้อมูล");
+
+$phpWord = new PhpWord();
+$section = $phpWord->addSection();
+
+// === STYLES ===
+$h1 = ['name' => 'TH Sarabun New', 'size' => 16, 'bold' => true];
+$label14 = ['name' => 'TH Sarabun New', 'size' => 14, 'bold' => true];
+$value14 = ['name' => 'TH Sarabun New', 'size' => 14];
+$centered = ['alignment' => 'center'];
+
+// === HEADER ===
+$section->addText('รายงานผลการลงพื้นที่', $h1, $centered);
+$section->addTextBreak(1);
+
+// === FORMAT แบบหัวข้อหนา ข้อมูลบาง ===
+function addLineStyled($section, $items = [])
+{
+    $textrun = $section->addTextRun();
+    foreach ($items as $item) {
+        $textrun->addText($item['label'], ['bold' => true, 'name' => 'TH Sarabun New', 'size' => 14]);
+        $textrun->addText(' ' . $item['value'] . '   ', ['name' => 'TH Sarabun New', 'size' => 14]);
+    }
+}
+
+// แถว 1: เลขที่สัญญา | เช่าซื้อชื่อ | กลุ่มงาน
+addLineStyled($section, [
+    ['label' => 'เลขที่สัญญา:', 'value' => $job['contract_number']],
+    ['label' => 'เช่าซื้อชื่อ:', 'value' => $job['location_info']],
+    ['label' => 'กลุ่มงาน:', 'value' => $job['product'] ?? '-'],
+]);
+
+// แถว 2: ค้างชำระ
+$os_clean = str_replace(',', '', $job['os']);
+$os_text = number_format(floatval($os_clean), 2) . ' บาท';
+addLineStyled($section, [
+    ['label' => 'ค้างชำระปัจจุบัน:', 'value' => 'OutStanding : ' . $os_text],
+]);
+
+// แถว 3: ทีม | วันที่ลงพื้นที่
+addLineStyled($section, [
+    ['label' => 'ทีม:', 'value' => 'บ.บาร์เกน พ้อยท์ จำกัด'],
+    ['label' => 'วันที่ลงพื้นที่:', 'value' => date('j/n/Y', strtotime($job['log_time']))],
+]);
+
+// แถว 4: สถานที่ลง
+addLineStyled($section, [
+    ['label' => 'สถานที่ลง:', 'value' => $job['location_area'] ?? '-'],
+]);
+
+$section->addTextBreak(1);
+
+// ผลการลงพื้นที่
+addLineStyled($section, [
+    ['label' => 'ผลการลงพื้นที่:', 'value' => $job['result'] ?? '-'],
+]);
+
+// หมายเหตุ
+addLineStyled($section, [
+    ['label' => 'หมายเหตุ:', 'value' => $job['note'] ?? '-'],
+]);
+
+// พิกัด
+addLineStyled($section, [
+    ['label' => 'พิกัด:', 'value' => $job['gps'] ?? '-'],
+]);
+
+$section->addTextBreak(1);
+
+// === รูปภาพ ===
+if (!empty($job['images'])) {
+    $section->addText('รูปภาพประกอบ', $label14, $centered);
+    $section->addTextBreak(1);
+
+    $images = json_decode($job['images'], true);
+    require_once __DIR__ . '/../includes/image_optimizer.php';
+
+    $table = $section->addTable(['alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER]);
+    $count = 0;
+
+    foreach ($images as $img) {
+        $paths = ImageOptimizer::getImagePaths($img);
+        $imgPath = '../uploads/job_photos/' . $paths['original'];
+        if (file_exists($imgPath)) {
+            if ($count % 2 === 0) {
+                $table->addRow();
+            }
+            $table->addCell(3000)->addImage($imgPath, [
+                'width' => 180,
+                'height' => 135,
+                'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
+            ]);
+            $count++;
+        }
+    }
+}
+
+// === OUTPUT ===
+header("Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+header('Content-Disposition: attachment; filename="job_' . $job['contract_number'] . '.docx"');
+
+$objWriter = IOFactory::createWriter($phpWord, 'Word2007');
+$objWriter->save("php://output");
+exit;

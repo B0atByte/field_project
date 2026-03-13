@@ -1,0 +1,65 @@
+# ==========================================
+# ไฟล์ที่ไม่ปลอดภัย / sensitive files
+# ==========================================
+
+# Environment & credentials
+.env
+.env.*
+!.env.example
+
+# Database credentials (fallback values อยู่ใน db.php แต่ยัง sensitive)
+# config/db.php  <- uncomment ถ้าต้องการ ignore ทั้งไฟล์
+
+# SSL Certificates & Keys
+certs/
+*.crt
+*.key
+*.pem
+*.p12
+config/ip.crt
+config/ip.cnf
+
+# Database dumps (ขนาดใหญ่ + มีข้อมูลจริง)
+*.sql
+*.sql.gz
+*.dump
+
+# ==========================================
+# ไฟล์ขนาดใหญ่ / large files
+# ==========================================
+
+# Composer dependencies (ติดตั้งได้จาก composer.lock)
+vendor/
+
+# Uploaded images / user content
+image/uploads/
+# image/  <- uncomment ถ้าไม่ต้องการ commit รูปภาพ
+
+# Temp files
+tmp/
+temp/
+*.tmp
+
+# Excel / data files
+*.xlsx
+*.xls
+*.csv
+
+# ==========================================
+# Claude Code local settings
+.claude/
+
+# OS & IDE
+# ==========================================
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+error_log
