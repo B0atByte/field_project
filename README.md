@@ -1,54 +1,128 @@
-update 22052568
-# 🚗 Field Project - Debt Collection Tracking System
+# Field Management System
+> ระบบบริหารจัดการงานภาคสนาม v3.0
 
-A modern web-based system for managing and tracking field debt collection operations.  
-Built using **PHP**, **MySQL**, and **Tailwind CSS**, designed to help assign jobs, track real-time status, and record field activities efficiently.
-
----
-
-## 📌 Features
-
-- 📋 Assign collection jobs to field officers
-- 📍 GPS tracking for job locations
-- 📤 Upload visit photos and customer documents
-- 🗓️ Work status logging with timestamps
-- 📊 Dashboard & report export to Excel
-- 🔐 Login system with role-based access (admin / field)
+ระบบจัดการงานสำหรับทีมภาคสนาม รองรับการมอบหมายงาน ติดตามสถานะ บันทึกผล และสร้างรายงาน
 
 ---
 
-## 🛠️ Tech Stack
+## Features
 
-- **Backend:** PHP (Native)
-- **Database:** MySQL
-- **Frontend:** Tailwind CSS
-- **Tools:** PhpSpreadsheet, SweetAlert2
+| Module | คำอธิบาย |
+|--------|-----------|
+| **Job Management** | สร้าง/แก้ไข/มอบหมาย/นำเข้างาน (Excel) |
+| **Field Dashboard** | รับงาน บันทึกผล GPS ถ่ายรูป |
+| **Manager Dashboard** | ติดตามงานของแผนก ตีงานกลับ |
+| **Admin Dashboard** | ภาพรวมระบบ สถิติ กราฟ Ranking |
+| **Map View** | แผนที่ตำแหน่งงาน (Leaflet) |
+| **Export** | Excel / PDF / Word ทั้งรายเดียวและ Bulk |
+| **Logs** | Login log, Job edit log, Deletion log |
+| **Security** | IP Whitelist, Rate limiting, CSRF, Remember me |
 
 ---
 
-## 🚀 Getting Started
+## Tech Stack
 
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/B0atByte/field_project.git
-Import SQL database (field_project.sql) into MySQL
+- **Backend:** PHP 8+ (no framework), MySQL 8
+- **Frontend:** Tailwind CSS, Chart.js, SweetAlert2, Leaflet
+- **Libraries:** PhpSpreadsheet, PhpWord, mPDF
+- **Deploy:** Docker / Linux (Apache/Caddy)
 
-Set your DB credentials in config/db.php:
-$host = "localhost";
-$user = "root";
-$pass = "";
-$db   = "field_project";
-Run via your browser (e.g. XAMPP):
+---
 
-http://localhost/field_project/
-📄 License
-This project is licensed under the MIT License
+## Roles
 
-👤 Author
-Patthanapong Kingjun (Boat)
-📧 boatzaha2905@gmail.com
-🌐 github.com/B0atByte
+| Role | สิทธิ์ |
+|------|--------|
+| `admin` | เต็มรูปแบบ — จัดการ user, งาน, export, ดู log ทุกอย่าง |
+| `manager` | ดูงานของแผนก, มอบหมายงาน, ตีงานกลับ, export |
+| `field` | รับงาน, บันทึกผล, ดูประวัติของตัวเอง |
 
-🏆 About the Project
-This project was developed during an internship at Howden Maxi Insurance Broker.
-It aims to improve field debt collection workflow by digitizing manual data logging and job tracking.
+---
+
+## Quick Start (Docker)
+
+```bash
+# 1. Clone
+git clone https://github.com/B0atByte/field_project.git
+cd field_project
+
+# 2. Config
+cp .env.example .env
+# แก้ไข .env ตามสภาพแวดล้อม
+
+# 3. Run
+docker compose up -d
+
+# 4. Import DB
+docker exec -i field_mysql mysql -u root -p field_project < SQL/field_project.sql
+```
+
+เปิด `http://localhost` หรือ `http://YOUR_IP`
+
+---
+
+## Quick Start (Linux / Apache)
+
+ดู [DEPLOY_LINUX.md](DEPLOY_LINUX.md) สำหรับขั้นตอนละเอียด
+
+---
+
+## Environment Variables
+
+สร้างไฟล์ `.env` จาก `.env.example`:
+
+```env
+DB_HOST=db
+DB_USER=root
+DB_PASS=your_password
+DB_NAME=field_project
+
+APP_DEBUG=false
+SESSION_LIFETIME=2592000
+MAX_LOGIN_ATTEMPTS=5
+```
+
+---
+
+## Project Structure
+
+```
+field_project/
+├── admin/              # หน้า Admin + API endpoints
+│   ├── api/            # JSON API (export, comments, map)
+│   └── logs_partials/  # Log partial views
+├── auth/               # Login / Logout
+├── components/         # Shared UI (header, sidebar, footer)
+├── config/             # DB config, env loader
+├── cron/               # Cron jobs (cleanup)
+├── dashboard/          # Role dashboards
+│   └── api/            # Dashboard real-time API
+├── includes/           # Session, CSRF, rate limiter, IP security
+├── SQL/                # Database schema
+├── image/              # Static assets (logo)
+├── Dockerfile
+├── docker-compose.yml
+└── .env.example
+```
+
+---
+
+## Database
+
+Schema อยู่ที่ `SQL/field_project.sql`
+
+ตารางหลัก: `users`, `jobs`, `job_logs`, `departments`, `login_logs`, `job_deletion_logs`
+
+---
+
+## Bug Fixes (2026-03-16)
+
+- เพิ่ม `ob_start()` ใน `session_config.php` ป้องกัน "headers already sent"
+- เพิ่ม `isset($_SESSION['user'])` guard ครอบคลุมทุกไฟล์ (~38 files)
+- เพิ่ม null coalescing guard สำหรับ `fetch_assoc()` chains
+
+---
+
+## License
+
+Internal use — BPL Field Management Team

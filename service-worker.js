@@ -1,25 +1,39 @@
-// Service Worker ถูกปิดการใช้งานเพื่อหลีกเลี่ยงปัญหา CSP และ CDN
+const CACHE_NAME = "field-cache-v1";
+const urlsToCache = [
+  "/field_project/index.php",
+  "/field_project/dashboard/admin.php",
+  "/field_project/dashboard/field.php",
+  "/field_project/admin/jobs.php",
+  "/field_project/view_job.php",
+  "/field_project/assets/icon-192.png",
+  "/field_project/assets/icon-512.png"
+];
 
-// Unregister เมื่อมีการโหลด Service Worker นี้
-self.addEventListener('install', () => {
-  self.skipWaiting();
+// ติดตั้ง (แคชไฟล์)
+self.addEventListener("install", event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+  );
 });
 
-self.addEventListener('activate', event => {
+// อัปเดตเวอร์ชันใหม่ (ลบ cache เก่า)
+self.addEventListener("activate", event => {
   event.waitUntil(
-    // ลบ cache ทั้งหมด
     caches.keys().then(cacheNames => {
       return Promise.all(
-        cacheNames.map(cacheName => caches.delete(cacheName))
+        cacheNames.map(name => {
+          if (name !== CACHE_NAME) {
+            return caches.delete(name);
+          }
+        })
       );
-    }).then(() => {
-      // Unregister ตัวเอง
-      return self.registration.unregister();
-    }).then(() => {
-      // Reload หน้าทั้งหมด
-      return clients.matchAll({ type: 'window' }).then(clients => {
-        clients.forEach(client => client.navigate(client.url));
-      });
     })
+  );
+});
+
+// ดึงข้อมูล (cache-first strategy)
+self.addEventListener("fetch", event => {
+  event.respondWith(
+    caches.match(event.request).then(response => response || fetch(event.request))
   );
 });

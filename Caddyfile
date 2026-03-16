@@ -1,0 +1,4 @@
+:8080 {
+    tls /certs/ip.crt /certs/ip.key
+    reverse_proxy field_php:80
+}

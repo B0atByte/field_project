@@ -1,44 +1,52 @@
 <?php
-// โหลด secure session config ก่อน
+// โหลด secure session config ก่อน (รวม auto-login จาก remember_me cookie)
 require_once 'includes/session_config.php';
 // จากนั้นโหลด CSRF functions
 require_once 'includes/csrf.php';
+
+// ถ้า user login อยู่แล้ว (หรือ auto-login จาก remember_me สำเร็จ) → redirect ไป dashboard เลย
+if (isset($_SESSION['user']) && !isset($_GET['status'])) {
+    $role = $_SESSION['user']['role'] ?? '';
+    switch ($role) {
+        case 'admin':
+            header("Location: dashboard/admin.php");
+            exit;
+        case 'manager':
+            header("Location: dashboard/manager.php");
+            exit;
+        case 'field':
+            header("Location: dashboard/field.php");
+            exit;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
   <meta charset="UTF-8">
-  <title>เข้าสู่ระบบ - ภาคสนาม</title>
+  <title>เข้าสู่ระบบ - ระบบบริหารจัดการงานภาคสนาม</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/png" href="image/BPL.png">
   <?= csrfMetaTag() ?>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       theme: {
         extend: {
           fontFamily: {
-            'thai': ['Prompt', 'sans-serif']
+            'thai': ['Sarabun', 'sans-serif']
           },
-          animation: {
-            'fade-in': 'fadeIn 0.6s ease-out',
-            'slide-up': 'slideUp 0.5s ease-out',
-            'float': 'float 3s ease-in-out infinite'
-          },
-          keyframes: {
-            fadeIn: {
-              '0%': { opacity: '0', transform: 'translateY(20px)' },
-              '100%': { opacity: '1', transform: 'translateY(0)' }
-            },
-            slideUp: {
-              '0%': { opacity: '0', transform: 'translateY(30px)' },
-              '100%': { opacity: '1', transform: 'translateY(0)' }
-            },
-            float: {
-              '0%, 100%': { transform: 'translateY(0px)' },
-              '50%': { transform: 'translateY(-10px)' }
+          colors: {
+            corporate: {
+              50: '#f0f4f8',
+              100: '#d9e2ec',
+              500: '#334e68', // Primary Slate
+              800: '#102a43', // Dark Navy
+              900: '#06152a', // Deep Blue
+              'accent': '#2cb1bc' // Teal accent
             }
           }
         }
@@ -46,259 +54,171 @@ require_once 'includes/csrf.php';
     }
   </script>
 </head>
-<body class="font-thai min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50">
-  
-  <!-- Background Pattern -->
-  <div class="absolute inset-0 opacity-5">
-    <div class="h-full w-full bg-[linear-gradient(45deg,transparent_35%,rgba(220,38,38,.1)_35%,rgba(220,38,38,.1)_65%,transparent_65%),linear-gradient(-45deg,transparent_35%,rgba(220,38,38,.05)_35%,rgba(220,38,38,.05)_65%,transparent_65%)] bg-[length:60px_60px]"></div>
-  </div>
 
-  <!-- Floating Elements -->
-  <div class="absolute inset-0 overflow-hidden pointer-events-none">
-    <div class="absolute top-20 left-20 w-2 h-2 bg-red-400 rounded-full animate-float opacity-60"></div>
-    <div class="absolute top-40 right-32 w-1 h-1 bg-red-300 rounded-full animate-float opacity-40" style="animation-delay: 1s;"></div>
-    <div class="absolute bottom-32 left-40 w-3 h-3 bg-red-500 rounded-full animate-float opacity-30" style="animation-delay: 2s;"></div>
-    <div class="absolute bottom-20 right-20 w-2 h-2 bg-red-400 rounded-full animate-float opacity-50" style="animation-delay: 0.5s;"></div>
-  </div>
+<body class="font-thai bg-corporate-50 min-h-screen flex items-center justify-center p-4">
 
-  <!-- Main Container -->
-  <div class="relative z-10 min-h-screen flex items-center justify-center px-4 py-8">
-    
-    <!-- Login Card -->
-    <div class="w-full max-w-md animate-fade-in">
-      <div class="bg-white rounded-3xl shadow-2xl border border-red-100 p-8 space-y-8">
-        
-        <!-- Header Section -->
-        <div class="text-center space-y-4 animate-slide-up">
-          <!-- Logo -->
-          <div class="flex justify-center">
-            <div class="relative">
-              <img src="image/BPL.png" alt="Logo" class="w-20 h-20 rounded-2xl object-cover shadow-lg border-2 border-red-200 transition-transform duration-300 hover:scale-105">
-              <div class="absolute -inset-1 bg-gradient-to-r from-red-500 to-red-600 rounded-2xl opacity-0 hover:opacity-20 transition-opacity duration-300"></div>
-            </div>
-          </div>
-          
-          <!-- Title -->
-          <div class="space-y-2">
-            <h1 class="text-3xl font-bold text-gray-800">เข้าสู่ระบบ</h1>
-            <p class="text-gray-500"> ระบบติดตามงานภาคสนาม บริษัท Bargainpoint </p>
-            <div class="w-16 h-1 bg-red-500 mx-auto rounded-full"></div>
+  <div class="w-full max-w-md bg-white rounded-lg shadow-xl overflow-hidden border border-corporate-100">
+    <!-- Header -->
+    <div class="bg-corporate-800 p-8 text-center relative overflow-hidden">
+      <!-- Background Graphic -->
+      <div class="absolute inset-0 opacity-10">
+        <svg class="h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <path d="M0 100 C 20 0 50 0 100 100 Z" fill="white" />
+        </svg>
+      </div>
+
+      <div class="relative z-10 flex flex-col items-center">
+        <div class="w-20 h-20 bg-white rounded-full p-1 shadow-lg mb-4 flex items-center justify-center">
+          <img src="image/BPL.png" alt="Logo" class="w-16 h-16 object-contain">
+        </div>
+        <h2 class="text-2xl font-bold text-white tracking-wide">FIELD MANAGEMENT</h2>
+        <p class="text-corporate-100 text-sm mt-1">ระบบบริหารจัดการงานภาคสนาม</p>
+      </div>
+    </div>
+
+    <!-- Login Form -->
+    <div class="p-8">
+      <form method="post" action="auth/login.php" id="loginForm" class="space-y-6">
+        <?= csrfField() ?>
+
+        <div>
+          <label for="username" class="block text-sm font-medium text-corporate-800 mb-1">ชื่อผู้ใช้</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </span>
+            <input type="text" name="username" id="username" required placeholder="Username"
+              class="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-corporate-500 focus:border-transparent transition-all text-sm">
           </div>
         </div>
 
-        <!-- Login Form -->
-        <form method="post" action="auth/login.php" class="space-y-6" id="loginForm">
-          <?= csrfField() ?>
-
-          <!-- Username Input -->
-          <div class="space-y-2 animate-slide-up" style="animation-delay: 0.1s;">
-            <label class="block text-sm font-semibold text-gray-700">ชื่อผู้ใช้</label>
-            <div class="relative">
-              <input type="text" 
-                     name="username" 
-                     id="username" 
-                     placeholder="กรุณาใส่ชื่อผู้ใช้" 
-                     required
-                     class="w-full px-4 py-4 bg-gray-50 border-2 border-gray-200 rounded-2xl text-gray-700 placeholder-gray-400 focus:outline-none focus:border-red-500 focus:bg-white transition-all duration-300 hover:border-red-300">
-              
-              <!-- Icon -->
-              <div class="absolute inset-y-0 right-4 flex items-center text-gray-400">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <!-- Password Input -->
-          <div class="space-y-2 animate-slide-up" style="animation-delay: 0.2s;">
-            <label class="block text-sm font-semibold text-gray-700">รหัสผ่าน</label>
-            <div class="relative">
-              <input type="password" 
-                     name="password" 
-                     id="password" 
-                     placeholder="กรุณาใส่รหัสผ่าน" 
-                     required
-                     class="w-full px-4 py-4 bg-gray-50 border-2 border-gray-200 rounded-2xl text-gray-700 placeholder-gray-400 focus:outline-none focus:border-red-500 focus:bg-white transition-all duration-300 hover:border-red-300 pr-12">
-              
-              <!-- Toggle Password Button -->
-              <button type="button" 
-                      id="togglePassword" 
-                      class="absolute inset-y-0 right-4 flex items-center text-gray-400 hover:text-red-500 transition-colors duration-200">
-                <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <!-- Remember Me & Forgot Password -->
-          <div class="flex items-center justify-between animate-slide-up" style="animation-delay: 0.3s;">
-            <!-- Remember Me Checkbox -->
-            <label class="flex items-center cursor-pointer group">
-              <div class="relative">
-                <input id="remember" 
-                       type="checkbox" 
-                       name="remember" 
-                       class="sr-only">
-                <div class="w-5 h-5 bg-white border-2 border-gray-300 rounded transition-all duration-200 group-hover:border-red-400">
-                  <svg class="w-3 h-3 text-white absolute top-0.5 left-0.5 hidden" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                  </svg>
-                </div>
-              </div>
-              <span class="ml-3 text-sm text-gray-600 group-hover:text-gray-800 transition-colors duration-200">จำฉันไว้</span>
-            </label>
-          </div>
-
-          <!-- Login Button -->
-          <div class="animate-slide-up" style="animation-delay: 0.4s;">
-            <button type="submit" 
-                    class="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold py-4 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-opacity-50">
-              <span class="flex items-center justify-center">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
-                </svg>
-                เข้าสู่ระบบ
-              </span>
+        <div>
+          <label for="password" class="block text-sm font-medium text-corporate-800 mb-1">รหัสผ่าน</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </span>
+            <input type="password" name="password" id="password" required placeholder="Password"
+              class="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-corporate-500 focus:border-transparent transition-all text-sm">
+            <button type="button" id="togglePassword"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+              <svg id="eyeIcon" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
             </button>
           </div>
-        </form>
+        </div>
 
-        <!-- Divider -->
-        <div class="relative animate-slide-up" style="animation-delay: 0.5s;">
-          <div class="absolute inset-0 flex items-center">
-            <div class="w-full border-t border-gray-200"></div>
-          </div>
-          <div class="relative flex justify-center text-sm">
-            <span class="bg-white px-4 text-gray-500">หรือ</span>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <input id="remember" name="remember" type="checkbox"
+              class="h-4 w-4 text-corporate-800 focus:ring-corporate-500 border-gray-300 rounded">
+            <label for="remember" class="ml-2 block text-sm text-gray-700">จำฉันไว้ในระบบ</label>
           </div>
         </div>
 
-        <!-- Footer -->
-        <div class="text-center space-y-3 animate-slide-up" style="animation-delay: 0.7s;">
-          <p class="text-xs text-gray-400">
-            © 2025 Boat_IT BPL Version 1.5 03/09/2568
-          </p>
-          
-          <!-- Status Indicator -->
-          <div class="flex items-center justify-center space-x-2 text-xs text-green-600">
-            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span>ระบบพร้อมใช้งาน</span>
-          </div>
+        <div>
+          <button type="submit"
+            class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-corporate-800 hover:bg-corporate-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-corporate-500 transition-colors">
+            เข้าสู่ระบบ
+          </button>
         </div>
-      </div>
+      </form>
+    </div>
+
+    <div class="bg-gray-50 px-8 py-4 border-t border-gray-200">
+      <p class="text-xs text-center text-gray-500">
+        &copy; 2026 FIELD MANAGEMENT All rights reserved.<br>
+        System Version 3.0 By Boat Patthanapong
+      </p>
     </div>
   </div>
 
-  <?php if (!empty($alertMessage)): ?>
-  <script>
-    Swal.fire({
-      icon: 'warning',
-      title: 'แจ้งเตือน',
-      text: '<?= $alertMessage ?>',
-      confirmButtonText: 'ตกลง',
-      confirmButtonColor: '#dc2626',
-      timer: 3500,
-      timerProgressBar: true,
-      background: '#ffffff',
-      showClass: {
-        popup: 'animate__animated animate__fadeInDown'
-      },
-      hideClass: {
-        popup: 'animate__animated animate__fadeOutUp'
-      }
-    });
-  </script>
-  <?php endif; ?>
+  <?php
+  // Logic การแสดง Alert
+  // 1. ตรวจสอบ Success จาก URL Parameter
+  if (isset($_GET['status']) && $_GET['status'] == 'success' && isset($_GET['redirect'])) {
+    $redirectUrl = htmlspecialchars($_GET['redirect']);
+    echo "
+      <script>
+        Swal.fire({
+          icon: 'success',
+          title: 'เข้าสู่ระบบสำเร็จ',
+          text: 'กำลังนำท่านเข้าสู่ระบบ...',
+          showConfirmButton: false,
+          timer: 1500,
+          background: '#fff',
+          iconColor: '#102a43'
+        }).then(() => {
+            window.location.href = '$redirectUrl';
+        });
+      </script>
+      ";
+  }
+
+  // 2. ตรวจสอบ Error จาก Session
+  if (isset($_SESSION['message'])) {
+    $msg = addslashes($_SESSION['message']);
+    echo "
+      <script>
+        Swal.fire({
+          icon: 'error',
+          title: 'ข้อผิดพลาด',
+          text: '$msg',
+          confirmButtonColor: '#102a43',
+          background: '#fff'
+        });
+      </script>
+      ";
+    unset($_SESSION['message']);
+  }
+  ?>
 
   <script>
-    // Toggle Password Visibility
-    const togglePassword = document.getElementById('togglePassword');
+    // Toggle Password
+    const toggleBtn = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('password');
+    const eyeIcon = document.getElementById('eyeIcon');
 
-    togglePassword.addEventListener('click', () => {
-      const type = passwordInput.type === 'password' ? 'text' : 'password';
-      passwordInput.type = type;
+    toggleBtn.addEventListener('click', () => {
+      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordInput.setAttribute('type', type);
 
-      document.getElementById('eyeIcon').outerHTML = type === 'text'
-        ? `<svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.99 9.99 0 012.149-3.63m3.364-2.766A9.953 9.953 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.972 9.972 0 01-1.272 2.592M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18" />
-           </svg>`
-        : `<svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-           </svg>`;
-    });
-
-    // Custom Checkbox Functionality
-    document.getElementById('remember').addEventListener('change', function() {
-      const checkmark = this.parentElement.querySelector('svg');
-      if (this.checked) {
-        checkmark.classList.remove('hidden');
-        this.parentElement.querySelector('div').classList.add('bg-red-500', 'border-red-500');
-        this.parentElement.querySelector('div').classList.remove('bg-white', 'border-gray-300');
+      if (type === 'text') {
+        eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.99 9.99 0 012.149-3.63m3.364-2.766A9.953 9.953 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.972 9.972 0 01-1.272 2.592M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18" />';
       } else {
-        checkmark.classList.add('hidden');
-        this.parentElement.querySelector('div').classList.remove('bg-red-500', 'border-red-500');
-        this.parentElement.querySelector('div').classList.add('bg-white', 'border-gray-300');
+        eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />';
       }
     });
 
-    // LocalStorage: Remember Me (เก็บเฉพาะ username เท่านั้น - ปลอดภัยกว่า)
+    // LocalStorage Logic for Remember Me
     document.addEventListener("DOMContentLoaded", () => {
-      const savedUsername = localStorage.getItem("saved_username");
-
+      const savedUsername = localStorage.getItem("saved_username_corp");
       if (savedUsername) {
         document.getElementById("username").value = savedUsername;
         document.getElementById("remember").checked = true;
-        document.getElementById("remember").dispatchEvent(new Event('change'));
       }
-
-      document.getElementById("loginForm").addEventListener("submit", () => {
-        const remember = document.getElementById("remember").checked;
-        const username = document.getElementById("username").value;
-
-        if (remember) {
-          localStorage.setItem("saved_username", username);
-        } else {
-          localStorage.removeItem("saved_username");
-        }
-      });
     });
 
-    // Add smooth input focus animations
-    document.querySelectorAll('input[type="text"], input[type="password"]').forEach(input => {
-      input.addEventListener('focus', function() {
-        this.parentElement.style.transform = 'translateY(-2px)';
-      });
-      
-      input.addEventListener('blur', function() {
-        this.parentElement.style.transform = 'translateY(0)';
-      });
-    });
-
-    // Service Worker - ปิดการใช้งานและ unregister existing workers
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        for(let registration of registrations) {
-          registration.unregister().then(success => {
-            if (success) console.log('Service Worker unregistered successfully');
-          });
-        }
-      });
-
-      // ลบ cache ทั้งหมด
-      if ('caches' in window) {
-        caches.keys().then(cacheNames => {
-          return Promise.all(
-            cacheNames.map(cacheName => caches.delete(cacheName))
-          );
-        }).then(() => console.log('All caches cleared'));
+    document.getElementById("loginForm").addEventListener("submit", () => {
+      const remember = document.getElementById("remember").checked;
+      const username = document.getElementById("username").value;
+      if (remember) {
+        localStorage.setItem("saved_username_corp", username);
+      } else {
+        localStorage.removeItem("saved_username_corp");
       }
-    }
+    });
   </script>
 </body>
+
 </html>

@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/session_config.php';
-if ($_SESSION['user']['role'] !== 'field') {
+if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'field') {
     header("Location: ../index.php");
     exit;
 }
@@ -17,36 +17,36 @@ $monthStart = date('Y-m-01');
 $stmt = $conn->prepare("SELECT COUNT(*) as count FROM jobs WHERE assigned_to = ? AND status = 'completed' AND DATE(updated_at) = ?");
 $stmt->bind_param("is", $userId, $today);
 $stmt->execute();
-$todayCount = $stmt->get_result()->fetch_assoc()['count'];
+$todayCount = ($stmt->get_result()->fetch_assoc() ?? [])['count'] ?? 0;
 
 // This week's completed jobs
 $stmt = $conn->prepare("SELECT COUNT(*) as count FROM jobs WHERE assigned_to = ? AND status = 'completed' AND DATE(updated_at) >= ?");
 $stmt->bind_param("is", $userId, $weekStart);
 $stmt->execute();
-$weekCount = $stmt->get_result()->fetch_assoc()['count'];
+$weekCount = ($stmt->get_result()->fetch_assoc() ?? [])['count'] ?? 0;
 
 // This month's completed jobs
 $stmt = $conn->prepare("SELECT COUNT(*) as count FROM jobs WHERE assigned_to = ? AND status = 'completed' AND DATE(updated_at) >= ?");
 $stmt->bind_param("is", $userId, $monthStart);
 $stmt->execute();
-$monthCount = $stmt->get_result()->fetch_assoc()['count'];
+$monthCount = ($stmt->get_result()->fetch_assoc() ?? [])['count'] ?? 0;
 
 // Total completed jobs
 $stmt = $conn->prepare("SELECT COUNT(*) as count FROM jobs WHERE assigned_to = ? AND status = 'completed'");
 $stmt->bind_param("i", $userId);
 $stmt->execute();
-$totalCount = $stmt->get_result()->fetch_assoc()['count'];
+$totalCount = ($stmt->get_result()->fetch_assoc() ?? [])['count'] ?? 0;
 
 // Average per day (last 30 days)
 $stmt = $conn->prepare("
-    SELECT COUNT(*) as count 
-    FROM jobs 
-    WHERE assigned_to = ? AND status = 'completed' 
+    SELECT COUNT(*) as count
+    FROM jobs
+    WHERE assigned_to = ? AND status = 'completed'
     AND DATE(updated_at) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
 ");
 $stmt->bind_param("i", $userId);
 $stmt->execute();
-$last30DaysCount = $stmt->get_result()->fetch_assoc()['count'];
+$last30DaysCount = ($stmt->get_result()->fetch_assoc() ?? [])['count'] ?? 0;
 $avgPerDay = round($last30DaysCount / 30, 1);
 
 // Daily stats for chart (last 7 days)
@@ -56,7 +56,7 @@ for ($i = 6; $i >= 0; $i--) {
     $stmt = $conn->prepare("SELECT COUNT(*) as count FROM jobs WHERE assigned_to = ? AND status = 'completed' AND DATE(updated_at) = ?");
     $stmt->bind_param("is", $userId, $date);
     $stmt->execute();
-    $count = $stmt->get_result()->fetch_assoc()['count'];
+    $count = ($stmt->get_result()->fetch_assoc() ?? [])['count'] ?? 0;
     $dailyStats[] = [
         'date' => $date,
         'count' => $count,

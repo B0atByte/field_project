@@ -1,10 +1,11 @@
 <?php
 require_once '../includes/session_config.php';
 include '../config/db.php';
+require_once '../includes/ip_security.php';
 
 if (isset($_SESSION['user'])) {
     $user_id = $_SESSION['user']['id'];
-    $ip_address = $_SERVER['REMOTE_ADDR'];
+    $ip_address = getClientIp();
     $user_agent = $_SERVER['HTTP_USER_AGENT'];
 
     // ✅ บันทึก log logout

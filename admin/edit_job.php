@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/session_config.php';
-if (!in_array($_SESSION['user']['role'], ['admin', 'manager'])) {
+if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['role'], ['admin', 'manager'])) {
     header("Location: ../index.php");
     exit;
 }
@@ -423,7 +423,7 @@ include '../components/header.php';
             <textarea name="remark" 
                       rows="4" 
                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all duration-300" 
-                      placeholder="เพิ่มหมายเหตุหรือรายละเอียดเพิ่มเติม..."><?= htmlspecialchars($job['remark']) ?></textarea>
+                      placeholder="เพิ่มหมายเหตุหรือรายละเอียดเพิ่มเติม..."><?= htmlspecialchars($job['remark'] ?? '') ?></textarea>
           </div>
 
           <!-- Action Buttons -->

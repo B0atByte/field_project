@@ -1,0 +1,68 @@
+php_value upload_max_filesize 512M
+php_value post_max_size 512M
+php_value memory_limit 2048M
+php_value max_execution_time 600
+php_value max_input_time 600
+
+# Security Headers
+<IfModule mod_headers.c>
+    # ป้องกัน clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
+
+    # ป้องกัน MIME type sniffing
+    Header always set X-Content-Type-Options "nosniff"
+
+    # XSS Protection
+    Header always set X-XSS-Protection "1; mode=block"
+
+    # Referrer Policy
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Content Security Policy (อนุญาต CDN ที่จำเป็น)
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.tailwindcss.com cdn.jsdelivr.net code.jquery.com cdn.datatables.net unpkg.com maps.googleapis.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com cdn.tailwindcss.com cdn.datatables.net cdnjs.cloudflare.com; font-src 'self' fonts.gstatic.com cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' https://fonts.googleapis.com https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://code.jquery.com https://cdn.datatables.net https://unpkg.com https://maps.googleapis.com https://maps.gstatic.com; worker-src 'self' blob:;"
+
+    # HTTPS Strict Transport Security (ถ้าใช้ HTTPS)
+    # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+</IfModule>
+
+# ป้องกันการเข้าถึงไฟล์ sensitive
+<FilesMatch "^\.env">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+<FilesMatch "\.(env|env\.example|gitignore|htaccess|htpasswd)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# ป้องกันการแสดง directory listing
+Options -Indexes
+
+# บังคับใช้ HTTPS (ถ้ามี SSL certificate)
+# <IfModule mod_rewrite.c>
+#     RewriteEngine On
+#     RewriteCond %{HTTPS} off
+#     RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# </IfModule>
+
+# ป้องกัน hotlinking รูปภาพ (ปิดใช้งานชั่วคราวเพื่อป้องกันปัญหาการแสดงผล)
+# <IfModule mod_rewrite.c>
+#     RewriteEngine on
+#     # อนุญาต empty referer (direct access, Service Worker, etc.)
+#     RewriteCond %{HTTP_REFERER} !^$
+#     # อนุญาต localhost, 127.0.0.1, และ IP ทุกช่วง
+#     RewriteCond %{HTTP_REFERER} !^http(s)?://(www\.)?(localhost|127\.0\.0\.1|192\.168\.[0-9]{1,3}\.[0-9]{1,3}|10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|172\.(1[6-9]|2[0-9]|3[0-1])\.[0-9]{1,3}\.[0-9]{1,3}|%{HTTP_HOST}) [NC]
+#     # Block รูปภาพจาก external sites
+#     RewriteRule \.(jpg|jpeg|png|gif|webp|avif)$ - [NC,F,L]
+# </IfModule>
+
+# Disable PHP execution in uploads directory
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+
+# Error Pages (ปรับแต่งตามต้องการ)
+ErrorDocument 403 /error/403.html
+ErrorDocument 404 /error/404.html
+ErrorDocument 500 /error/500.html

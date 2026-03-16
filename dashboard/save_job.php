@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/session_config.php';
-if (!in_array($_SESSION['user']['role'], ['field', 'admin'])) {
+if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['role'], ['field', 'admin'])) {
     die("Unauthorized");
 }
 

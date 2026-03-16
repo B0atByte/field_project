@@ -3,10 +3,14 @@
 require_once __DIR__ . '/env.php';
 
 // ดึงค่าจาก .env file
-$host = env('DB_HOST', 'localhost');
+// ✅ จุดที่แก้ 1: เปลี่ยนจาก 'localhost' เป็น 'mysql' (เพื่อให้ตรงกับชื่อ Service ใน docker-compose)
+$host = env('DB_HOST', 'db');
+
+// ✅ จุดที่แก้ 2: ใส่รหัสผ่าน 'Zxcv1234' ให้ตรงกับที่คุณตั้งใน MySQL
+$pass = env('DB_PASS', '    ');
+
 $user = env('DB_USER', 'root');
-$pass = env('DB_PASS', '');
-$db   = env('DB_NAME', 'field_project');
+$db = env('DB_NAME', 'field_project');
 
 // สร้าง connection
 $conn = new mysqli($host, $user, $pass, $db);
@@ -25,4 +29,8 @@ if ($conn->connect_error) {
 
 // ตั้งค่าภาษา/เข้ารหัส
 $conn->set_charset("utf8mb4");
+
+// ตั้งค่า Timezone เป็นเวลาไทย (GMT+7)
+date_default_timezone_set('Asia/Bangkok');
+$conn->query("SET time_zone = '+07:00'");
 ?>

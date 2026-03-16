@@ -1,5 +1,13 @@
 <?php
+// เริ่ม Output Buffering ทันทีเพื่อดักจับ Error/Warning
+ob_start();
+
+// เพิ่ม Memory Limit และ Time Limit สำหรับการ export ข้อมูลจำนวนมาก
+ini_set('memory_limit', '512M');
+set_time_limit(0);
+
 require_once __DIR__ . '/../includes/session_config.php';
+
 if (!isset($_SESSION['user'])) {
     die("คุณไม่มีสิทธิ์เข้าถึงหน้านี้");
 }
@@ -203,7 +211,10 @@ while ($row = $result->fetch_assoc()) {
 }
 
 // ส่งออก
-ob_clean();
+// ล้าง Buffer เดิมที่มีอยู่ทั้งหมด (ป้องกัน Warning/Notice หลุดไปในไฟล์ Excel)
+while (ob_get_level()) {
+    ob_end_clean();
+}
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 header('Content-Disposition: attachment;filename="export_jobs_' . date('Ymd_His') . '.xlsx"');
 header('Cache-Control: max-age=0');

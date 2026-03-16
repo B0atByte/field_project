@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  php:
+    build: .
+    container_name: field_php
+    volumes:
+      - ./:/var/www/html
+    expose:
+      - "80"
+    environment:
+      DB_HOST: db
+      DB_USER: user
+      DB_PASS: password
+      DB_NAME: field_project
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0
+    container_name: field_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: field_project
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: field_phpmyadmin
+    restart: always
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: root
+    depends_on:
+      - db
+
+  https_proxy:
+    image: caddy:latest
+    container_name: field_https
+    restart: always
+    ports:
+      - "7080:8080"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./certs:/certs  
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - php
+
+volumes:
+  db_data:
+  caddy_data:
+  caddy_config:

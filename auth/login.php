@@ -3,6 +3,7 @@ require_once __DIR__ . '/../includes/session_config.php';
 include '../config/db.php';
 require_once '../includes/csrf.php';
 require_once '../includes/rate_limiter.php';
+require_once '../includes/ip_security.php';
 
 // สร้างตาราง login_attempts ถ้ายังไม่มี
 createLoginAttemptsTable($conn);
@@ -15,7 +16,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $password = trim($_POST['password']);
     $remember = isset($_POST['remember']);
 
-    $ip_address = $_SERVER['REMOTE_ADDR'];
+    $ip_address = getClientIp();
     $user_agent = $_SERVER['HTTP_USER_AGENT'];
 
     // ตรวจสอบ Rate Limiting
@@ -57,7 +58,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 'username' => $user['username'],
                 'role' => $user['role'],
                 'department_id' => $user['department_id'],
-                'can_delete_jobs' => (int)$user['can_delete_jobs'],
+                'can_delete_jobs' => (int) $user['can_delete_jobs'],
             ];
 
             // ✅ เพิ่ม session แยกสำหรับ user_id
@@ -72,7 +73,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt_log->execute();
             $stmt_log->close();
 
-            // ✅ จำฉันไว้ (30 วัน) - ใช้ random token แทน password hash
+            // ✅ จำฉันไว้ (90 วัน / 3 เดือน) - ใช้ random token แทน password hash
             if ($remember) {
                 // สร้าง random token
                 $remember_token = bin2hex(random_bytes(32));
@@ -83,13 +84,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $stmt_token->execute();
                 $stmt_token->close();
 
-                // เก็บ cookie
+                // เก็บ cookie (90 วัน)
                 $cookie_data = base64_encode(json_encode([
                     'id' => $user['id'],
                     'token' => $remember_token
                 ]));
                 setcookie('remember_user', $cookie_data, [
-                    'expires' => time() + (86400 * 30),
+                    'expires' => time() + (86400 * 90), // 90 วัน
                     'path' => '/',
                     'httponly' => true,
                     'secure' => isset($_SERVER['HTTPS']),
@@ -97,22 +98,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 ]);
             }
 
-            // 👉 ไปยังหน้าตาม role
+            // 👉 ส่งค่ากลับไปที่ index.php เพื่อแสดง Alert Success แล้วค่อย Redirect
+            $redirect_url = "../index.php";
             switch ($user['role']) {
                 case 'admin':
-                    header("Location: ../dashboard/admin.php");
+                    $redirect_url = "dashboard/admin.php";
                     break;
                 case 'manager':
-                    header("Location: ../dashboard/manager.php");
+                    $redirect_url = "dashboard/manager.php";
                     break;
                 case 'field':
-                    header("Location: ../dashboard/field.php");
+                    $redirect_url = "dashboard/field.php";
                     break;
                 default:
                     $_SESSION['message'] = "❌ บทบาทไม่ถูกต้อง";
                     header("Location: ../index.php");
-                    break;
+                    exit;
             }
+
+            // Redirect ไปที่ index.php พร้อม parameter
+            header("Location: ../index.php?status=success&redirect=" . urlencode($redirect_url));
             exit;
         }
     }
