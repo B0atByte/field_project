@@ -51,14 +51,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         // ✅ ตรวจสอบรหัสผ่าน
         if (password_verify($password, $user['password'])) {
+            // โหลด permissions จาก DB
+            require_once __DIR__ . '/../includes/permissions.php';
+            $permissions = loadUserPermissions($conn, $user['id']);
+
             // ✅ เก็บ session
             $_SESSION['user'] = [
-                'id' => $user['id'],
-                'name' => $user['name'],
-                'username' => $user['username'],
-                'role' => $user['role'],
-                'department_id' => $user['department_id'],
+                'id'              => $user['id'],
+                'name'            => $user['name'],
+                'username'        => $user['username'],
+                'role'            => $user['role'],
+                'department_id'   => $user['department_id'],
                 'can_delete_jobs' => (int) $user['can_delete_jobs'],
+                'permissions'     => $permissions,
             ];
 
             // ✅ เพิ่ม session แยกสำหรับ user_id

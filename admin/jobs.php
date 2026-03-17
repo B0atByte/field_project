@@ -558,7 +558,6 @@ $submitted_end = $_GET['submitted_end'] ?? '';
               <th class="px-4 py-3 text-left">กำหนด</th>
               <th class="px-4 py-3 text-left">ลงเมื่อ</th>
               <th class="px-4 py-3 text-left">ผู้รับ</th>
-              <th class="px-4 py-3 text-left">ลำดับ</th>
               <th class="px-4 py-3 text-left">สถานะ</th>
               <th class="px-4 py-3 text-left">ผล</th>
               <th class="px-4 py-3 text-left">แผนก</th>
@@ -821,18 +820,6 @@ $submitted_end = $_GET['submitted_end'] ?? '';
           {
             data: 'officer_name',
             render: (data) => `<div class="text-slate-700">${esc(data)}</div>`
-          },
-          {
-            data: 'priority',
-            render: (data) => {
-              const priority = parseInt(data) || 0;
-              let colorClass = 'bg-slate-100 text-slate-600';
-              if (priority <= 3) colorClass = 'bg-red-100 text-red-700';
-              else if (priority <= 7) colorClass = 'bg-yellow-100 text-yellow-700';
-              else colorClass = 'bg-green-100 text-green-700';
-
-              return `<span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${colorClass}">${priority}</span>`;
-            }
           },
           {
             data: 'submission_status',

@@ -142,13 +142,17 @@ if (!isset($_SESSION['user']) && isset($_COOKIE['remember_user'])) {
 
                 if ($u && $u['active'] == 1 && $u['remember_token'] === $chk_token) {
                     session_regenerate_id(true);
+                    // โหลด permissions จาก DB
+                    require_once __DIR__ . '/permissions.php';
+                    $permissions = loadUserPermissions($conn, $u['id']);
                     $_SESSION['user'] = [
-                        'id' => $u['id'],
-                        'name' => $u['name'],
-                        'username' => $u['username'],
-                        'role' => $u['role'],
-                        'department_id' => $u['department_id'],
+                        'id'              => $u['id'],
+                        'name'            => $u['name'],
+                        'username'        => $u['username'],
+                        'role'            => $u['role'],
+                        'department_id'   => $u['department_id'],
                         'can_delete_jobs' => (int) ($u['can_delete_jobs'] ?? 0),
+                        'permissions'     => $permissions,
                     ];
                     $_SESSION['user_id'] = $u['id'];
                     $_SESSION['initialized'] = true;

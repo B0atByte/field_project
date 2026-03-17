@@ -36,6 +36,18 @@ while ($row = $res->fetch_assoc()) {
     $visible_ids[] = $row['to_department_id'];
 }
 
+// ดึง permissions ปัจจุบันของ user
+require_once '../includes/permissions.php';
+$perm_stmt = $conn->prepare("SELECT permission FROM user_permissions WHERE user_id = ?");
+$perm_stmt->bind_param("i", $id);
+$perm_stmt->execute();
+$perm_res = $perm_stmt->get_result();
+$user_permissions = [];
+while ($p = $perm_res->fetch_assoc()) {
+    $user_permissions[] = $p['permission'];
+}
+$perm_stmt->close();
+
 // บันทึกข้อมูล
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     requireCsrfToken();
@@ -57,15 +69,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $stmt->execute();
 
-    // ลบสิทธิ์เก่า
+    // ลบสิทธิ์แผนกเก่า
     $conn->query("DELETE FROM department_visibility WHERE from_user_id = {$id}");
 
-    // เพิ่มสิทธิ์ใหม่
+    // เพิ่มสิทธิ์แผนกใหม่
     foreach ($visible_departments as $dept_id) {
         $stmt = $conn->prepare("INSERT INTO department_visibility (from_user_id, to_department_id) VALUES (?, ?)");
         $stmt->bind_param("ii", $id, $dept_id);
         $stmt->execute();
     }
+
+    // บันทึก granular permissions
+    $all_permission_keys = array_merge(
+        array_keys(getAllPermissions()['pages']),
+        array_keys(getAllPermissions()['jobs']),
+        array_keys(getAllPermissions()['export']),
+        array_keys(getAllPermissions()['manage'])
+    );
+    $submitted_permissions = $_POST['permissions'] ?? [];
+
+    // ลบ permissions เก่าออก
+    $conn->query("DELETE FROM user_permissions WHERE user_id = {$id}");
+
+    // บันทึก permissions ใหม่ (whitelist validation)
+    $perm_insert = $conn->prepare("INSERT IGNORE INTO user_permissions (user_id, permission) VALUES (?, ?)");
+    foreach ($submitted_permissions as $perm) {
+        if (in_array($perm, $all_permission_keys, true)) {
+            $perm_insert->bind_param("is", $id, $perm);
+            $perm_insert->execute();
+        }
+    }
+    $perm_insert->close();
 
     header("Location: users.php");
     exit;
@@ -311,6 +345,49 @@ include '../components/sidebar.php';
   .hidden {
     display: none;
   }
+
+  /* Granular Permission Grid */
+  .perm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .perm-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.55rem 0.75rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 0.875rem;
+  }
+
+  .perm-item:hover {
+    background: #eff6ff;
+    border-color: #93c5fd;
+  }
+
+  .perm-item:has(.perm-checkbox:checked) {
+    background: #eff6ff;
+    border-color: #2563eb;
+  }
+
+  .perm-checkbox {
+    width: 16px;
+    height: 16px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .perm-label {
+    color: var(--text-primary);
+    line-height: 1.3;
+  }
 </style>
 
 <main class="min-h-screen">
@@ -430,20 +507,57 @@ include '../components/sidebar.php';
           </div>
         </div>
 
-        <!-- Manager Permissions Card -->
-        <div id="manager-permissions" class="form-card permissions-card hidden">
+        <!-- Granular Permissions Card (hidden for admin role) -->
+        <div id="granular-permissions" class="form-card <?= $user['role'] === 'admin' ? 'hidden' : '' ?>">
           <h2 class="card-title">
-            <i class="fas fa-crown card-icon"></i>
-            สิทธิ์พิเศษสำหรับ Manager
+            <i class="fas fa-key card-icon"></i>
+            สิทธิ์การเข้าถึงและดำเนินการ
           </h2>
-          
-          <div class="permission-item">
-            <input type="checkbox" name="can_delete_jobs" class="permission-checkbox" 
-                   <?= $user['can_delete_jobs'] ? 'checked' : '' ?>>
-            <span>
-              <i class="fas fa-trash-alt text-red-500"></i>
-              สามารถลบงานได้
-            </span>
+          <p class="text-sm text-gray-500 mb-4 -mt-2">
+            <i class="fas fa-info-circle mr-1"></i>
+            Admin มีสิทธิ์ทุกอย่างโดยอัตโนมัติ — การตั้งค่านี้ใช้กับ Manager และ Field เท่านั้น
+          </p>
+
+          <?php
+          $all_perms = getAllPermissions();
+          $group_labels = [
+              'pages'  => ['icon' => 'fa-door-open',     'label' => 'การเข้าถึงหน้า'],
+              'jobs'   => ['icon' => 'fa-briefcase',     'label' => 'การจัดการงาน'],
+              'export' => ['icon' => 'fa-file-export',   'label' => 'การ Export ข้อมูล'],
+              'manage' => ['icon' => 'fa-tools',         'label' => 'การจัดการระบบ'],
+          ];
+          foreach ($all_perms as $group_key => $group_items):
+              $gl = $group_labels[$group_key];
+          ?>
+          <div class="mb-5">
+            <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <i class="fas <?= $gl['icon'] ?> text-blue-500"></i>
+              <?= $gl['label'] ?>
+            </h3>
+            <div class="perm-grid">
+              <?php foreach ($group_items as $perm_key => $perm_label): ?>
+              <label class="perm-item">
+                <input type="checkbox"
+                       name="permissions[]"
+                       value="<?= $perm_key ?>"
+                       class="perm-checkbox"
+                       <?= in_array($perm_key, $user_permissions, true) ? 'checked' : '' ?>>
+                <span class="perm-label"><?= htmlspecialchars($perm_label) ?></span>
+              </label>
+              <?php endforeach; ?>
+            </div>
+          </div>
+          <?php endforeach; ?>
+
+          <div class="flex gap-2 mt-2">
+            <button type="button" onclick="toggleAllPerms(true)"
+              class="text-xs px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-md transition">
+              <i class="fas fa-check-double mr-1"></i>เลือกทั้งหมด
+            </button>
+            <button type="button" onclick="toggleAllPerms(false)"
+              class="text-xs px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 rounded-md transition">
+              <i class="fas fa-times mr-1"></i>ล้างทั้งหมด
+            </button>
           </div>
         </div>
 
@@ -486,17 +600,22 @@ include '../components/sidebar.php';
 </main>
 
 <script>
-  // Toggle Manager Permissions
+  // Toggle granular permissions card (visible for manager and field, hidden for admin)
   function togglePermissions() {
     const role = document.getElementById('role-select').value;
-    const box = document.getElementById('manager-permissions');
-    if (role === 'manager') {
-      box.classList.remove('hidden');
-    } else {
+    const box = document.getElementById('granular-permissions');
+    if (role === 'admin') {
       box.classList.add('hidden');
+    } else {
+      box.classList.remove('hidden');
     }
   }
-  
+
+  // Select/deselect all permissions
+  function toggleAllPerms(state) {
+    document.querySelectorAll('.perm-checkbox').forEach(cb => cb.checked = state);
+  }
+
   document.getElementById('role-select').addEventListener('change', togglePermissions);
   window.addEventListener('DOMContentLoaded', togglePermissions);
 
