@@ -1,3 +1,4 @@
+<?php require_once __DIR__ . '/../includes/permissions.php'; ?>
 <button onclick="toggleSidebar()"
   class="md:hidden fixed top-4 left-4 z-50 bg-white shadow-lg text-gray-700 p-3 rounded-xl hover:shadow-xl transition-all duration-300 border border-gray-200">
   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,11 +68,12 @@
       <span class="ml-3 text-sm">หน้าหลัก</span>
     </a>
 
-    <?php if (isset($_SESSION['user']['role']) && in_array($_SESSION['user']['role'], ['admin', 'manager'])): ?>
+    <?php if (isset($_SESSION['user']) && (hasPermission('page_jobs') || hasPermission('page_import') || hasPermission('page_map'))): ?>
       <div class="px-4 pb-2 pt-1">
         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">การจัดการงาน</p>
       </div>
 
+      <?php if (hasPermission('page_import')): ?>
       <a href="../admin/import_jobs.php"
         class="group flex items-center px-4 py-2.5 text-gray-600 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-all font-medium">
         <div
@@ -83,7 +85,9 @@
         </div>
         <span class="ml-3 text-sm">นำเข้างาน</span>
       </a>
+      <?php endif; ?>
 
+      <?php if (hasPermission('page_jobs')): ?>
       <a href="../admin/jobs.php"
         class="group flex items-center px-4 py-2.5 text-gray-600 rounded-xl hover:bg-green-50 hover:text-green-600 transition-all font-medium">
         <div
@@ -95,7 +99,9 @@
         </div>
         <span class="ml-3 text-sm">รายการงาน</span>
       </a>
+      <?php endif; ?>
 
+      <?php if (hasPermission('page_map')): ?>
       <a href="../admin/map.php"
         class="group flex items-center px-4 py-2.5 text-gray-600 rounded-xl hover:bg-purple-50 hover:text-purple-600 transition-all font-medium">
         <div
@@ -107,14 +113,16 @@
         </div>
         <span class="ml-3 text-sm">แผนที่</span>
       </a>
+      <?php endif; ?>
     <?php endif; ?>
 
-    <?php if (isset($_SESSION['user']['role']) && $_SESSION['user']['role'] === 'admin'): ?>
+    <?php if (isset($_SESSION['user']) && (hasPermission('page_users') || hasPermission('page_logs') || hasPermission('action_delete_jobs_bulk') || $_SESSION['user']['role'] === 'admin')): ?>
       <div class="my-2 border-t border-gray-100"></div>
       <div class="px-4 pb-2 pt-1">
         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">ผู้ดูแลระบบ</p>
       </div>
 
+      <?php if (hasPermission('page_users')): ?>
       <a href="../admin/users.php"
         class="group flex items-center px-4 py-2.5 text-gray-600 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-all font-medium">
         <div
@@ -126,7 +134,9 @@
         </div>
         <span class="ml-3 text-sm">ผู้ใช้งาน</span>
       </a>
+      <?php endif; ?>
 
+      <?php if ($_SESSION['user']['role'] === 'admin'): ?>
       <a href="../setup_ip_security.php"
         class="group flex items-center px-4 py-2.5 text-gray-600 rounded-xl hover:bg-teal-50 hover:text-teal-600 transition-all font-medium">
         <div
@@ -138,7 +148,9 @@
         </div>
         <span class="ml-3 text-sm">ความปลอดภัย (IP)</span>
       </a>
+      <?php endif; ?>
 
+      <?php if (hasPermission('page_logs')): ?>
       <a href="../admin/logs.php"
         class="group flex items-center px-4 py-2.5 text-gray-600 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-all font-medium">
         <div
@@ -150,7 +162,9 @@
         </div>
         <span class="ml-3 text-sm">ระบบ Logs</span>
       </a>
+      <?php endif; ?>
 
+      <?php if (hasPermission('action_delete_jobs_bulk')): ?>
       <a href="../admin/admin_delete_jobs.php"
         class="group flex items-center px-4 py-2.5 text-gray-600 rounded-xl hover:bg-rose-50 hover:text-rose-600 transition-all font-medium">
         <div
@@ -162,6 +176,7 @@
         </div>
         <span class="ml-3 text-sm">ลบงาน</span>
       </a>
+      <?php endif; ?>
     <?php endif; ?>
 
     <div class="h-4"></div>

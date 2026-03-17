@@ -1,9 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/session_config.php';
-if (!isset($_SESSION['user'])) {
-  header("Location: ../index.php");
-  exit;
-}
+require_once __DIR__ . '/../includes/permissions.php';
+requirePermission('page_jobs');
 include '../config/db.php';
 require_once '../includes/csrf.php';
 
@@ -12,7 +10,7 @@ $current_user_role = $_SESSION['user']['role'];
 $current_user_can_delete = $_SESSION['user']['can_delete_jobs'] ?? 0;
 
 /* ====== ลบงานทั้งหมดตามสิทธิ์ Admin ====== */
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_all']) && $current_user_role === 'admin') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_all']) && hasPermission('action_delete_jobs_bulk')) {
   requireCsrfToken();
   $password = $_POST['password'] ?? '';
   $delete_type = $_POST['delete_type'] ?? 'all';
@@ -139,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_all']) && $cur
 }
 
 /* ====== ลบงานทีละรายการ ====== */
-if (isset($_GET['delete']) && ($current_user_role === 'admin' || ($current_user_role === 'manager' && $current_user_can_delete))) {
+if (isset($_GET['delete']) && hasPermission('action_delete_job')) {
   $delete_id = intval($_GET['delete']);
 
   // ดึงข้อมูลงานก่อนลบ เพื่อบันทึก log
@@ -451,7 +449,7 @@ $submitted_end = $_GET['submitted_end'] ?? '';
           กลับแดชบอร์ด
         </a>
 
-        <?php if ($current_user_role === 'admin'): ?>
+        <?php if (hasPermission('action_delete_jobs_bulk')): ?>
           <button onclick="confirmDeleteAll()" class="btn-action bg-red-600 hover:bg-red-700">
             <i class="fas fa-trash-alt"></i>
             ลบงาน
@@ -529,17 +527,21 @@ $submitted_end = $_GET['submitted_end'] ?? '';
             รีเซ็ต
           </button>
 
+          <?php if (hasPermission('action_export_excel')): ?>
           <button type="button" id="exportBtn"
             class="btn-secondary-action text-green-600 border-green-200 hover:bg-green-50">
             <i class="fas fa-file-export"></i>
             ส่งออก Excel
           </button>
+          <?php endif; ?>
 
+          <?php if (hasPermission('action_export_word')): ?>
           <a href="export_word_from_excel.php"
             class="btn-secondary-action text-blue-600 border-blue-200 hover:bg-blue-50">
             <i class="fas fa-file-word"></i>
             Export Word (จาก Excel)
           </a>
+          <?php endif; ?>
         </div>
       </form>
     </div>

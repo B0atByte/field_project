@@ -1,15 +1,13 @@
 <?php
 require_once __DIR__ . '/../includes/session_config.php';
+require_once __DIR__ . '/../includes/permissions.php';
 include('../config/db.php');
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// ตรวจสอบสิทธิ์ admin
-if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
-    header("Location: ../auth/login.php");
-    exit;
-}
+// ตรวจสอบสิทธิ์
+requirePermission('action_delete_jobs_bulk');
 
 // CSRF
 if (empty($_SESSION['csrf_token'])) {

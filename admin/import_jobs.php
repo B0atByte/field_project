@@ -1,9 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/session_config.php';
-if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['role'], ['admin', 'manager'])) {
-  header("Location: ../index.php");
-  exit;
-}
+require_once __DIR__ . '/../includes/permissions.php';
+requirePermission('page_import');
 
 ini_set('memory_limit', '2048M');
 set_time_limit(0);

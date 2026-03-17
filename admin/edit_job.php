@@ -1,9 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/session_config.php';
-if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['role'], ['admin', 'manager'])) {
-    header("Location: ../index.php");
-    exit;
-}
+require_once __DIR__ . '/../includes/permissions.php';
+requirePermission('action_edit_job');
 include '../config/db.php';
 require_once '../includes/csrf.php';
 

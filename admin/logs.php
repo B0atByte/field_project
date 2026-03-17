@@ -1,9 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/session_config.php';
-if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
-    header("Location: ../index.php");
-    exit;
-}
+require_once __DIR__ . '/../includes/permissions.php';
+requirePermission('page_logs');
 include '../config/db.php';
 
 // Generate CSRF Token
@@ -22,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_logs'])) {
         $alert_type = 'error';
     } else {
         // Double-check admin role
-        if ($_SESSION['user']['role'] !== 'admin') {
+        if (!hasPermission('action_view_logs')) {
             $alert_message = 'ไม่มีสิทธิ์ในการลบ Log (ต้องเป็นผู้ดูแลระบบเท่านั้น)';
             $alert_type = 'error';
         } else {

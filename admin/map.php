@@ -1,9 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/session_config.php';
-if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['role'], ['admin', 'field', 'manager'])) {
-  header("Location: ../index.php");
-  exit;
-}
+require_once __DIR__ . '/../includes/permissions.php';
+requirePermission('page_map');
 include '../config/db.php';
 
 $start = $_GET['start'] ?? '';

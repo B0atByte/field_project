@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/session_config.php';
+require_once __DIR__ . '/../includes/permissions.php';
 
 // ปิดการแสดง Error เพื่อป้องกัน JSON Syntax Error (กรณีมี Warning)
 error_reporting(0);
@@ -235,23 +236,18 @@ while ($row = $res->fetch_assoc()) {
     'department_name'     => htmlspecialchars($row['department_name'] ?? '-'),
     'updated_by_name'     => htmlspecialchars($row['updated_by_name'] ?? '-'),
     'last_submitted_at'   => $row['last_submitted_at'] ? date('Y-m-d H:i', strtotime($row['last_submitted_at'])) : '-',
-    'actions' => '
-      <div class="flex items-center justify-center gap-2">
-        <a href="../dashboard/job_result.php?id=' . $job_id . '&' . $queryString . '" 
-           class="btn-icon btn-icon-primary" title="ดูรายละเอียด">
-           <i class="fas fa-eye"></i>
-        </a>
-        <a href="edit_job.php?id=' . $job_id . '&' . $queryString . '" 
-           class="btn-icon btn-icon-warning" title="แก้ไข">
-           <i class="fas fa-pencil-alt"></i>
-        </a>
-        <a href="jobs.php?delete=' . $job_id . '&' . $queryString . '" 
-           onclick="return confirm(\'ยืนยันการลบงานนี้?\')" 
-           class="btn-icon btn-icon-danger" title="ลบ">
-           <i class="fas fa-trash-alt"></i>
-        </a>
-      </div>
-    '
+    'actions' => (function() use ($job_id, $queryString) {
+      $html = '<div class="flex items-center justify-center gap-2">';
+      $html .= '<a href="../dashboard/job_result.php?id=' . $job_id . '&' . $queryString . '" class="btn-icon btn-icon-primary" title="ดูรายละเอียด"><i class="fas fa-eye"></i></a>';
+      if (hasPermission('action_edit_job')) {
+        $html .= '<a href="edit_job.php?id=' . $job_id . '&' . $queryString . '" class="btn-icon btn-icon-warning" title="แก้ไข"><i class="fas fa-pencil-alt"></i></a>';
+      }
+      if (hasPermission('action_delete_job')) {
+        $html .= '<a href="jobs.php?delete=' . $job_id . '&' . $queryString . '" onclick="return confirm(\'ยืนยันการลบงานนี้?\')" class="btn-icon btn-icon-danger" title="ลบ"><i class="fas fa-trash-alt"></i></a>';
+      }
+      $html .= '</div>';
+      return $html;
+    })()
   ];
 }
 
