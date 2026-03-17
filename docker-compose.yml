@@ -6,12 +6,13 @@ services:
     container_name: field_php
     volumes:
       - ./:/var/www/html
+      - ./docker/php-custom.ini:/usr/local/etc/php/conf.d/custom.ini
     expose:
       - "80"
     environment:
       DB_HOST: db
       DB_USER: user
-      DB_PASS: password
+      DB_PASS: GE62ts3oVqQr639u1KCKfA5DzMDvwli
       DB_NAME: field_project
     depends_on:
       - db
@@ -24,9 +25,9 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: field_project
       MYSQL_USER: user
-      MYSQL_PASSWORD: password
+      MYSQL_PASSWORD: GE62ts3oVqQr639u1KCKfA5DzMDvwli
     ports:
-      - "3307:3306"
+      - "127.0.0.1:3307:3306"
     volumes:
       - db_data:/var/lib/mysql
 
@@ -35,7 +36,7 @@ services:
     container_name: field_phpmyadmin
     restart: always
     ports:
-      - "8081:80"
+      - "127.0.0.1:8081:80"
     environment:
       PMA_HOST: db
       PMA_USER: root
@@ -51,7 +52,7 @@ services:
       - "7080:8080"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
-      - ./certs:/certs  
+      - ./certs:/certs
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
