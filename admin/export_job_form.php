@@ -1,8 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/session_config.php';
-if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['role'], ['admin', 'field'])) {
-    die("Unauthorized");
-}
+require_once __DIR__ . '/../includes/permissions.php';
+requirePermission('action_export_pdf');
 $jobId = $_GET['id'] ?? null;
 if (!$jobId) die("ไม่พบงาน");
 ?>

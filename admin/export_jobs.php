@@ -7,10 +7,8 @@ ini_set('memory_limit', '512M');
 set_time_limit(0);
 
 require_once __DIR__ . '/../includes/session_config.php';
-
-if (!isset($_SESSION['user'])) {
-    die("คุณไม่มีสิทธิ์เข้าถึงหน้านี้");
-}
+require_once __DIR__ . '/../includes/permissions.php';
+requirePermission('action_export_excel');
 
 require '../config/db.php';
 require '../vendor/autoload.php';

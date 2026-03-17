@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/../includes/session_config.php';
+require_once __DIR__ . '/../includes/permissions.php';
+requirePermission('action_export_excel');
 require_once '../config/db.php';
 require '../vendor/autoload.php';
 use PhpOffice\PhpSpreadsheet\Spreadsheet;

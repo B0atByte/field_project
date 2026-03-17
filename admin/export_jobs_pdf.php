@@ -1,8 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/session_config.php';
-if (!isset($_SESSION['user'])) {
-    die("Unauthorized");
-}
+require_once __DIR__ . '/../includes/permissions.php';
+requirePermission('action_export_pdf');
 
 require_once '../vendor/autoload.php';
 include '../config/db.php';
