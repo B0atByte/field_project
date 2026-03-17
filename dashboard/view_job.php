@@ -501,7 +501,7 @@ $date_now = date("Y-m-d\TH:i");
                 </div>
                 <button type="button" onclick="copyText('<?= addslashes($job['contract_number'] ?? '') ?>')"
                   class="copy-btn flex-shrink-0">
-                  📋 คัดลอก
+                  <i class="fas fa-clipboard mr-1"></i>คัดลอก
                 </button>
               </div>
               <button type="button" onclick="showJobHistory()" id="historyBtn"
@@ -529,7 +529,7 @@ $date_now = date("Y-m-d\TH:i");
             <p class="font-semibold text-gray-900"><?= htmlspecialchars($job['overdue_period'] ?? '-') ?> วัน</p>
           </div>
           <div class="info-box info-box-highlight">
-            <label class="text-xs sm:text-sm text-gray-600 font-medium block mb-1">💰 ยอดคงเหลือ OS</label>
+            <label class="text-xs sm:text-sm text-gray-600 font-medium block mb-1"><i class="fas fa-coins mr-1"></i>ยอดคงเหลือ OS</label>
             <p class="font-bold text-lg text-red-600">
               <?php
               $os_value = $job['os'] ?? '0';
@@ -549,11 +549,11 @@ $date_now = date("Y-m-d\TH:i");
               <?php
               $priority = $job['priority'];
               if ($priority === 'urgent')
-                echo '<span class="status-badge priority-urgent">🔴 ด่วนที่สุด</span>';
+                echo '<span class="status-badge priority-urgent">ด่วนที่สุด</span>';
               elseif ($priority === 'high')
-                echo '<span class="status-badge priority-high">🟠 ด่วน</span>';
+                echo '<span class="status-badge priority-high">ด่วน</span>';
               else
-                echo '<span class="status-badge priority-normal">🟢 ปกติ</span>';
+                echo '<span class="status-badge priority-normal">ปกติ</span>';
               ?>
             </div>
           </div>
@@ -582,7 +582,7 @@ $date_now = date("Y-m-d\TH:i");
               </div>
               <button type="button" onclick="copyText('<?= addslashes($job['location_info'] ?? '') ?>')"
                 class="copy-btn flex-shrink-0">
-                📋
+                <i class="fas fa-clipboard"></i>
               </button>
             </div>
           </div>
@@ -633,7 +633,7 @@ $date_now = date("Y-m-d\TH:i");
       <div class="card p-4 sm:p-6 fade-in">
         <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-xl">
           <div class="flex items-start gap-3">
-            <div class="text-yellow-500 text-2xl flex-shrink-0">📝</div>
+            <div class="text-yellow-500 text-2xl flex-shrink-0"><i class="fas fa-edit"></i></div>
             <div class="flex-1 min-w-0">
               <h4 class="font-bold text-yellow-800 mb-2">หมายเหตุสำคัญ</h4>
               <p class="text-yellow-700 break-words"><?= nl2br(htmlspecialchars($job['remark'])) ?></p>
@@ -648,7 +648,7 @@ $date_now = date("Y-m-d\TH:i");
       <div class="card p-4 sm:p-6 fade-in">
         <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl">
           <div class="flex items-start gap-3">
-            <div class="text-red-500 text-2xl flex-shrink-0">⚠️</div>
+            <div class="text-red-500 text-2xl flex-shrink-0"><i class="fas fa-exclamation-triangle"></i></div>
             <div class="flex-1 min-w-0">
               <h4 class="font-bold text-red-800 mb-2">งานถูกตีกลับเพื่อแก้ไข</h4>
               <div class="space-y-2">
@@ -677,13 +677,13 @@ $date_now = date("Y-m-d\TH:i");
     <?php if (!$can_submit): ?>
       <div class="card p-6 sm:p-8 text-center fade-in">
         <div class="mb-6">
-          <div class="text-6xl sm:text-7xl mb-4">🎯</div>
+          <div class="text-6xl sm:text-7xl mb-4"><i class="fas fa-bullseye"></i></div>
           <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-3">พร้อมรับงานนี้หรือยัง?</h3>
           <p class="text-gray-600">กดปุ่มด้านล่างเพื่อรับงานและเริ่มดำเนินการ</p>
         </div>
         <button onclick="confirmAcceptJob(<?= $job['id'] ?>)"
           class="btn btn-success text-base sm:text-lg px-8 py-4 w-full sm:w-auto">
-          ✅ รับงานนี้
+          <i class="fas fa-check mr-2"></i>รับงานนี้
         </button>
       </div>
 
@@ -717,7 +717,7 @@ $date_now = date("Y-m-d\TH:i");
                 <input type="radio" name="result" value="พบผู้เช่า/ผู้ค้ำ/ผู้ครอบครอง" required class="sr-only"
                   onchange="updateProgress()">
                 <div class="flex items-center gap-2">
-                  <div class="text-xl">✅</div>
+                  <div class="text-xl"><i class="fas fa-check-circle text-green-600"></i></div>
                   <div>
                     <div class="font-bold text-green-700 text-sm">พบผู้เช่า/ผู้ค้ำ/ผู้ครอบครอง</div>
                   </div>
@@ -727,7 +727,7 @@ $date_now = date("Y-m-d\TH:i");
                 <input type="radio" name="result" value="ไม่พบผู้เช่า/ผู้คำ/ผู้ครอบครอง" required class="sr-only"
                   onchange="updateProgress()">
                 <div class="flex items-center gap-2">
-                  <div class="text-xl">❌</div>
+                  <div class="text-xl"><i class="fas fa-times-circle text-red-500"></i></div>
                   <div>
                     <div class="font-bold text-red-700 text-sm">ไม่พบผู้เช่า/ผู้คำ/ผู้ครอบครอง</div>
                   </div>
@@ -737,7 +737,7 @@ $date_now = date("Y-m-d\TH:i");
                 <input type="radio" name="result" value="พบที่ตั้ง /ไม่พบรถ" required class="sr-only"
                   onchange="updateProgress()">
                 <div class="flex items-center gap-2">
-                  <div class="text-xl">🏠</div>
+                  <div class="text-xl"><i class="fas fa-home"></i></div>
                   <div>
                     <div class="font-bold text-blue-700 text-sm">พบที่ตั้ง /ไม่พบรถ</div>
                   </div>
@@ -747,7 +747,7 @@ $date_now = date("Y-m-d\TH:i");
                 <input type="radio" name="result" value="ไม่พบที่ตั้ง/ไม่พบรถ" required class="sr-only"
                   onchange="updateProgress()">
                 <div class="flex items-center gap-2">
-                  <div class="text-xl">❓</div>
+                  <div class="text-xl"><i class="fas fa-question-circle"></i></div>
                   <div>
                     <div class="font-bold text-gray-700 text-sm">ไม่พบที่ตั้ง/ไม่พบรถ</div>
                   </div>
@@ -757,7 +757,7 @@ $date_now = date("Y-m-d\TH:i");
                 <input type="radio" name="result" value="พบ บ.3 ฝากเรื่องติดต่อกลับ" required class="sr-only"
                   onchange="updateProgress()">
                 <div class="flex items-center gap-2">
-                  <div class="text-xl">📋</div>
+                  <div class="text-xl"><i class="fas fa-clipboard"></i></div>
                   <div>
                     <div class="font-bold text-purple-700 text-sm">พบ บ.3 ฝากเรื่องติดต่อกลับ</div>
                   </div>
@@ -767,7 +767,7 @@ $date_now = date("Y-m-d\TH:i");
                 <input type="radio" name="result" value="พบรถ ไม่พบผู้เช่า/ผู้ค้ำ" required class="sr-only"
                   onchange="updateProgress()">
                 <div class="flex items-center gap-2">
-                  <div class="text-xl">🚗</div>
+                  <div class="text-xl"><i class="fas fa-car"></i></div>
                   <div>
                     <div class="font-bold text-orange-700 text-sm">พบรถ ไม่พบผู้เช่า/ผู้ค้ำ</div>
                   </div>
@@ -776,7 +776,7 @@ $date_now = date("Y-m-d\TH:i");
               <label class="radio-card">
                 <input type="radio" name="result" value="นัดชำระ" required class="sr-only" onchange="updateProgress()">
                 <div class="flex items-center gap-2">
-                  <div class="text-xl">💰</div>
+                  <div class="text-xl"><i class="fas fa-coins"></i></div>
                   <div>
                     <div class="font-bold text-indigo-700 text-sm">นัดชำระ</div>
                   </div>
@@ -785,7 +785,7 @@ $date_now = date("Y-m-d\TH:i");
               <label class="radio-card">
                 <input type="radio" name="result" value="นัดคืนรถ" required class="sr-only" onchange="updateProgress()">
                 <div class="flex items-center gap-2">
-                  <div class="text-xl">🔄</div>
+                  <div class="text-xl"><i class="fas fa-undo text-teal-600"></i></div>
                   <div>
                     <div class="font-bold text-teal-700 text-sm">นัดคืนรถ</div>
                   </div>
@@ -814,7 +814,7 @@ $date_now = date("Y-m-d\TH:i");
               กรุณากรอกรายละเอียดและหมายเหตุ
             </div>
             <div class="flex justify-between text-xs text-gray-500 mt-2">
-              <span>💡 ข้อมูลรายละเอียดจะช่วยในการติดตามงาน</span>
+              <span><i class="fas fa-lightbulb mr-1"></i>ข้อมูลรายละเอียดจะช่วยในการติดตามงาน</span>
               <span id="noteCounter" class="font-semibold">0 ตัวอักษร</span>
             </div>
           </div>
@@ -827,43 +827,43 @@ $date_now = date("Y-m-d\TH:i");
                 <input type="text" name="gps" id="gps" class="form-input col-span-1 sm:col-span-2" readonly
                   value="<?= htmlspecialchars($job['gps'] ?? '') ?>" placeholder="กรุณาดึงพิกัด GPS">
                 <button type="button" onclick="getLocation()" class="btn btn-primary" id="getLocationBtn">
-                  📡 ดึงพิกัด
+                  <i class="fas fa-satellite-dish mr-1"></i>ดึงพิกัด
                 </button>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <input type="text" id="search_latlng" placeholder="13.9212182,100.6560147"
                   class="form-input col-span-1 sm:col-span-2">
                 <button type="button" onclick="searchLatLng()" class="btn btn-purple">
-                  🔍 ค้นหาพิกัด
+                  <i class="fas fa-search-location mr-1"></i>ค้นหาพิกัด
                 </button>
               </div>
               <button type="button" onclick="clearGps()" class="btn btn-danger w-full sm:w-auto">
-                🗑️ ลบพิกัด
+                <i class="fas fa-trash mr-1"></i>ลบพิกัด
               </button>
             </div>
             <div id="gpsValidation" class="validation-message validation-error hidden">
               กรุณาดึงพิกัด GPS ก่อนส่งงาน
             </div>
             <div id="gpsSuccess" class="validation-message validation-success hidden">
-              ✅ พิกัด GPS ถูกต้อง
+              <i class="fas fa-check-circle mr-1"></i>พิกัด GPS ถูกต้อง
             </div>
           </div>
 
           <!-- Map -->
           <div class="mb-6">
             <div id="map"></div>
-            <p class="text-xs text-gray-500 mt-2">🗺️ คลิกและลากเครื่องหมายบนแผนที่เพื่อปรับตำแหน่งพิกัด</p>
+            <p class="text-xs text-gray-500 mt-2"><i class="fas fa-map-marker-alt mr-1"></i>คลิกและลากเครื่องหมายบนแผนที่เพื่อปรับตำแหน่งพิกัด</p>
           </div>
 
           <!-- Images -->
           <div class="mb-6">
-            <label class="block text-sm sm:text-base font-bold text-gray-900 mb-2 required">📷 รูปถ่าย (ต้องอัปโหลด 4
+            <label class="block text-sm sm:text-base font-bold text-gray-900 mb-2 required"><i class="fas fa-camera mr-1"></i>รูปถ่าย (ต้องอัปโหลด 4
               รูป)</label>
             <div class="file-upload" id="fileUploadArea">
               <input type="file" name="images[]" multiple accept="image/*" class="hidden" id="imageInput"
                 onchange="handleFileSelection(this)">
               <div class="upload-content">
-                <div class="text-4xl sm:text-5xl mb-3">📷</div>
+                <div class="text-4xl sm:text-5xl mb-3"><i class="fas fa-camera text-gray-400"></i></div>
                 <p class="font-bold text-sm sm:text-base mb-2">คลิกเพื่อเลือกรูปภาพ</p>
                 <p class="text-xs sm:text-sm text-gray-500 mb-1">หรือลากไฟล์มาวางที่นี่</p>
                 <p class="text-xs text-gray-400">รองรับไฟล์ JPG, PNG ขนาดไม่เกิน 10MB ต่อไฟล์</p>
@@ -873,7 +873,7 @@ $date_now = date("Y-m-d\TH:i");
               กรุณาอัปโหลดรูปภาพ 4 รูป
             </div>
             <div id="imageSuccess" class="validation-message validation-success hidden">
-              ✅ อัปโหลดรูปภาพครบ 4 รูปแล้ว
+              <i class="fas fa-check-circle mr-1"></i>อัปโหลดรูปภาพครบ 4 รูปแล้ว
             </div>
 
             <div id="imagePreview" class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 hidden"></div>
@@ -883,13 +883,13 @@ $date_now = date("Y-m-d\TH:i");
           <div class="text-center space-y-4">
             <button type="submit" class="btn btn-success text-base sm:text-lg px-8 py-4 w-full sm:w-auto" id="submitBtn"
               disabled>
-              💾 บันทึกผลภาคสนาม
+              <i class="fas fa-save mr-2"></i>บันทึกผลภาคสนาม
             </button>
             <div id="submitValidation" class="validation-message validation-error hidden">
               กรุณากรอกข้อมูลให้ครบถ้วนก่อนส่งงาน
             </div>
             <div class="text-xs text-gray-500">
-              ⚠️ ตรวจสอบข้อมูลให้ครบถ้วนก่อนกดส่ง การส่งงานจะไม่สามารถแก้ไขได้
+              <i class="fas fa-exclamation-triangle mr-1 text-yellow-500"></i>ตรวจสอบข้อมูลให้ครบถ้วนก่อนกดส่ง การส่งงานจะไม่สามารถแก้ไขได้
             </div>
           </div>
         </div>
@@ -899,10 +899,10 @@ $date_now = date("Y-m-d\TH:i");
           <h4 class="font-bold text-red-700 mb-3 text-sm sm:text-base">ไม่สามารถปฏิบัติงานได้?</h4>
           <a href="reject_job.php?id=<?= $job['id'] ?>" onclick="return confirmRejectJob();"
             class="btn btn-danger w-full sm:w-auto">
-            ❌ ปฏิเสธงานนี้
+            <i class="fas fa-times mr-2"></i>ปฏิเสธงานนี้
           </a>
           <p class="text-xs text-gray-500 mt-2">
-            💬 ติดต่อหัวหน้างานก่อนปฏิเสธงานนี้
+            <i class="fas fa-comment mr-1"></i>ติดต่อหัวหน้างานก่อนปฏิเสธงานนี้
           </p>
         </div>
       </form>
@@ -1119,7 +1119,7 @@ $date_now = date("Y-m-d\TH:i");
     function resetLocationButton() {
       const btn = document.getElementById('getLocationBtn');
       btn.classList.remove('loading');
-      btn.textContent = '📡 ดึงพิกัด';
+      btn.innerHTML = '<i class="fas fa-satellite-dish mr-1"></i>ดึงพิกัด';
     }
 
     function searchLatLng() {
@@ -1324,10 +1324,10 @@ $date_now = date("Y-m-d\TH:i");
       };
 
       const icons = {
-        success: '✅',
-        error: '❌',
-        warning: '⚠️',
-        info: 'ℹ️'
+        success: '<i class="fas fa-check-circle"></i>',
+        error: '<i class="fas fa-times-circle"></i>',
+        warning: '<i class="fas fa-exclamation-triangle"></i>',
+        info: '<i class="fas fa-info-circle"></i>'
       };
 
       Swal.fire({
@@ -1348,7 +1348,7 @@ $date_now = date("Y-m-d\TH:i");
         text: 'คุณต้องการรับงานนี้ใช่หรือไม่?',
         icon: 'question',
         showCancelButton: true,
-        confirmButtonText: '✅ รับงาน',
+        confirmButtonText: 'รับงาน',
         cancelButtonText: 'ยกเลิก',
         confirmButtonColor: '#10b981'
       }).then((result) => {
@@ -1365,7 +1365,7 @@ $date_now = date("Y-m-d\TH:i");
           text: 'คุณแน่ใจหรือไม่ที่จะปฏิเสธงานนี้? งานจะถูกส่งกลับให้ผู้อื่นรับได้',
           icon: 'warning',
           showCancelButton: true,
-          confirmButtonText: '❌ ปฏิเสธงาน',
+          confirmButtonText: 'ปฏิเสธงาน',
           cancelButtonText: 'ยกเลิก',
           confirmButtonColor: '#ef4444'
         }).then((result) => {
@@ -1461,13 +1461,13 @@ $date_now = date("Y-m-d\TH:i");
                             ${statusBadge}
                           </div>
                           <div class="text-sm font-semibold text-gray-900 mb-1">
-                            📍 ${job.location_info || '-'}
+                            <i class="fas fa-map-marker-alt mr-1"></i>${job.location_info || '-'}
                           </div>
                           <div class="text-xs text-gray-500">
-                            🏷️ ${job.zone || '-'} | ${job.province || '-'}
+                            <i class="fas fa-tag mr-1"></i>${job.zone || '-'} | ${job.province || '-'}
                           </div>
                           <div class="text-xs text-gray-400 mt-1">
-                            📅 สร้างเมื่อ: ${createdDate}
+                            <i class="fas fa-calendar-alt mr-1"></i>สร้างเมื่อ: ${createdDate}
                           </div>
                         </div>
                         <button onclick="toggleDetails(${index})" id="toggleBtn_${index}"
@@ -1490,28 +1490,28 @@ $date_now = date("Y-m-d\TH:i");
 
                         ${job.note ? `
                           <div class="bg-gray-50 p-3 rounded-lg">
-                            <div class="text-xs font-semibold text-gray-700 mb-1">💬 หมายเหตุ</div>
+                            <div class="text-xs font-semibold text-gray-700 mb-1"><i class="fas fa-comment mr-1"></i> หมายเหตุ</div>
                             <div class="text-sm text-gray-600 whitespace-pre-wrap">${job.note}</div>
                           </div>
                         ` : ''}
 
                         ${job.log_time ? `
                           <div class="bg-green-50 p-3 rounded-lg">
-                            <div class="text-xs font-semibold text-green-800 mb-1">📅 วันที่บันทึกผล</div>
+                            <div class="text-xs font-semibold text-green-800 mb-1"><i class="fas fa-calendar-alt mr-1"></i> วันที่บันทึกผล</div>
                             <div class="text-sm text-green-900">${logTime}</div>
                           </div>
                         ` : ''}
 
                         ${hasGPS ? `
                           <div class="bg-purple-50 p-3 rounded-lg">
-                            <div class="text-xs font-semibold text-purple-800 mb-1">📍 พิกัด GPS</div>
+                            <div class="text-xs font-semibold text-purple-800 mb-1"><i class="fas fa-map-marker-alt mr-1"></i> พิกัด GPS</div>
                             <div class="text-sm text-purple-900 font-mono">${job.gps}</div>
                           </div>
                         ` : ''}
 
                         ${job.assigned_name ? `
                           <div class="text-xs text-gray-500">
-                            👤 ผู้รับผิดชอบ: <span class="font-semibold">${job.assigned_name}</span>
+                            <i class="fas fa-user mr-1"></i> ผู้รับผิดชอบ: <span class="font-semibold">${job.assigned_name}</span>
                           </div>
                         ` : ''}
 
@@ -1522,7 +1522,7 @@ $date_now = date("Y-m-d\TH:i");
                         <div class="flex gap-2">
                           <a href="job_result.php?id=${job.id}" target="_blank"
                              class="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold transition-colors text-center">
-                            📊 ดูผลงานที่บันทึก
+                            <i class="fas fa-chart-bar mr-1"></i> ดูผลงานที่บันทึก
                           </a>
                         </div>
                       </div>

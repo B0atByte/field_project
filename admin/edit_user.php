@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-$page_title = "✏️ แก้ไขผู้ใช้";
+$page_title = "แก้ไขผู้ใช้";
 include '../components/header.php';
 include '../components/sidebar.php';
 ?>
@@ -378,13 +378,13 @@ include '../components/sidebar.php';
               </label>
               <select name="role" id="role-select" class="form-select">
                 <option value="admin" <?= $user['role'] === 'admin' ? 'selected' : '' ?>>
-                  🛡️ Admin - ผู้ดูแลระบบ
+                  Admin - ผู้ดูแลระบบ
                 </option>
                 <option value="manager" <?= $user['role'] === 'manager' ? 'selected' : '' ?>>
-                  👔 Manager - ผู้จัดการ
+                  Manager - ผู้จัดการ
                 </option>
                 <option value="field" <?= $user['role'] === 'field' ? 'selected' : '' ?>>
-                  👥 Field - พนักงานภาคสนาม
+                  Field - พนักงานภาคสนาม
                 </option>
               </select>
             </div>

@@ -238,7 +238,7 @@ function parseUserAgent($ua)
   </div>
 
   <form method="post" action="logs.php?tab=login"
-    onsubmit="return confirm('⚠️ คุณต้องการล้าง Log ทั้งหมดหรือไม่?\n\nการดำเนินการนี้จะลบประวัติการเข้าใช้งานทั้งหมดออกจากระบบ และไม่สามารถกู้คืนได้\n\nต้องเป็นผู้ดูแลระบบเท่านั้น');"
+    onsubmit="return confirm('คุณต้องการล้าง Log ทั้งหมดหรือไม่?\n\nการดำเนินการนี้จะลบประวัติการเข้าใช้งานทั้งหมดออกจากระบบ และไม่สามารถกู้คืนได้\n\nต้องเป็นผู้ดูแลระบบเท่านั้น');"
     class="flex flex-col sm:flex-row gap-4">
     <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
     <input type="hidden" name="log_type" value="login">

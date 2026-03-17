@@ -441,7 +441,7 @@ function isNewJob($created) { return $created ? (time()-strtotime($created) <= 2
 <div class="container">
   <header class="header">
     <div class="header-title">
-      📋 งานที่ยังไม่ได้รับ (<?= $jobs->num_rows ?> งาน)
+      <i class="fas fa-clipboard-list mr-1"></i>งานที่ยังไม่ได้รับ (<?= $jobs->num_rows ?> งาน)
     </div>
     <div class="header-subtitle">
       จัดการและติดตามงานที่รอการรับผิดชอบ
@@ -451,13 +451,13 @@ function isNewJob($created) { return $created ? (time()-strtotime($created) <= 2
   <?php include '../components/field_summary_cards.php'; ?>
 
   <nav class="nav-pills">
-    <a href="field.php" class="nav-pill unassigned">🔙 กลับ</a>
-    <a href="../admin/map.php" target="_blank" class="nav-pill assigned">🗺️ งานกลาง</a>
-    <a href="../auth/logout.php" class="nav-pill completed">🚪 ออกจากระบบ</a>
+    <a href="field.php" class="nav-pill unassigned"><i class="fas fa-arrow-left mr-1"></i> กลับ</a>
+    <a href="../admin/map.php" target="_blank" class="nav-pill assigned"><i class="fas fa-map-marked-alt mr-1"></i> งานกลาง</a>
+    <a href="../auth/logout.php" class="nav-pill completed"><i class="fas fa-sign-out-alt mr-1"></i> ออกจากระบบ</a>
   </nav>
 
   <div class="search-container">
-    <div class="search-icon">🔍</div>
+    <div class="search-icon"><i class="fas fa-search"></i></div>
     <input 
       type="text" 
       id="searchJobs" 
@@ -497,21 +497,21 @@ function isNewJob($created) { return $created ? (time()-strtotime($created) <= 2
             </div>
             <div class="detail-item">
               <div class="detail-label">ทะเบียน</div>
-              <div class="detail-value">🚗 <?= htmlspecialchars($row['plate'] ?? '') ?></div>
+              <div class="detail-value"><i class="fas fa-car mr-1"></i><?= htmlspecialchars($row['plate'] ?? '') ?></div>
             </div>
           </div>
 
           <div class="job-actions">
             <?= daysDiffBadge($row['due_date'] ?? null) ?>
             <a href="view_job.php?id=<?= $row['id'] ?>" class="view-btn">
-              👁️ ดูรายละเอียด
+              <i class="fas fa-eye mr-1"></i>ดูรายละเอียด
             </a>
           </div>
         </div>
       <?php endwhile; ?>
     <?php else: ?>
       <div class="no-data">
-        <div class="no-data-icon">📝</div>
+        <div class="no-data-icon"><i class="fas fa-edit"></i></div>
         <h3>ไม่มีงานที่ยังไม่ได้รับ</h3>
         <p>ไม่พบงานที่รอการรับผิดชอบในขณะนี้</p>
       </div>
@@ -552,11 +552,11 @@ function isNewJob($created) { return $created ? (time()-strtotime($created) <= 2
             </div>
           </td>
           <td><?= htmlspecialchars($row['model_detail'] ?? '') ?></td>
-          <td>🚗 <?= htmlspecialchars($row['plate'] ?? '') ?></td>
+          <td><i class="fas fa-car mr-1"></i><?= htmlspecialchars($row['plate'] ?? '') ?></td>
           <td><?= daysDiffBadge($row['due_date'] ?? null) ?></td>
           <td>
             <a href="view_job.php?id=<?= $row['id'] ?>" class="view-btn" style="flex: none; padding: 0.5rem 1rem;">
-              👁️ ดู
+              <i class="fas fa-eye mr-1"></i>ดู
             </a>
           </td>
         </tr>

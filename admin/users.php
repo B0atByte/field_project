@@ -147,7 +147,7 @@ $stats_active = (int) ($conn->query("SELECT COUNT(*) c FROM users WHERE active=1
 $stats_blocked = (int) ($conn->query("SELECT COUNT(*) c FROM users WHERE active=0")->fetch_assoc()['c'] ?? 0);
 $stats_manager = (int) ($conn->query("SELECT COUNT(*) c FROM users WHERE role='manager'")->fetch_assoc()['c'] ?? 0);
 
-$page_title = "👤 จัดการผู้ใช้งาน";
+$page_title = "จัดการผู้ใช้งาน";
 include '../components/header.php';
 include '../components/sidebar.php';
 ?>

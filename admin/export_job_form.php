@@ -18,20 +18,20 @@ if (!$jobId) die("ไม่พบงาน");
   <!-- ฟอร์มส่งไป PDF -->
   <form id="exportForm" action="export_job_detail_pdf.php" method="post" target="exportFrame" class="bg-white p-6 rounded shadow w-full max-w-md">
     <input type="hidden" name="job_id" value="<?= htmlspecialchars($jobId) ?>">
-    <h2 class="text-xl font-semibold mb-4">📝 ข้อมูลก่อน Export PDF</h2>
+    <h2 class="text-xl font-semibold mb-4"><i class="fas fa-edit mr-2"></i>ข้อมูลก่อน Export PDF</h2>
 
-    <label class="block mb-2">📍 ทีมที่ไปปฏิบัติงาน:</label>
+    <label class="block mb-2"><i class="fas fa-users mr-1"></i>ทีมที่ไปปฏิบัติงาน:</label>
     <input name="team" type="text" required class="w-full mb-4 px-4 py-2 border rounded">
 
-    <label class="block mb-2">💰 ค้างชำระปัจจุบัน (เช่น: 2 งวด, 24,000.00):</label>
+    <label class="block mb-2"><i class="fas fa-coins mr-1"></i>ค้างชำระปัจจุบัน (เช่น: 2 งวด, 24,000.00):</label>
     <input name="outstanding" type="text" required class="w-full mb-4 px-4 py-2 border rounded">
 
     <div class="flex justify-between mt-6">
       <a href="jobs.php?id=<?= htmlspecialchars($jobId) ?>" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">
-        🔙 กลับ
+        <i class="fas fa-arrow-left mr-1"></i>กลับ
       </a>
       <button type="submit" onclick="onExport()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
-        📤 สร้าง PDF
+        <i class="fas fa-file-pdf mr-1"></i>สร้าง PDF
       </button>
     </div>
   </form>

@@ -138,4 +138,4 @@ function sendToDiscord($job, $note, $gps, $images, $result) {
 sendToDiscord($job, $note, $gps, $images, $result);
 
 // ---- Redirect ----
-echo "<script>alert('✅ บันทึกผลงานสำเร็จ'); window.location.href='field.php';</script>";
+echo "<script>window.location.href='field.php';</script>";

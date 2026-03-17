@@ -458,7 +458,7 @@ $result = $stmt->get_result();
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
       <div>
         <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">
-          📊 งานที่เสร็จแล้ว
+          <i class="fas fa-chart-bar mr-2"></i>งานที่เสร็จแล้ว
         </h1>
         <p class="text-sm sm:text-base text-gray-600 mt-1">สถิติและประวัติการทำงานของคุณ</p>
       </div>
@@ -489,9 +489,9 @@ $result = $stmt->get_result();
   <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
     <div class="stat-card stat-card-today count-up" style="animation-delay: 0.1s">
       <div class="flex items-center justify-between mb-3">
-        <div class="text-3xl">📅</div>
+        <div class="text-3xl"><i class="fas fa-calendar-day"></i></div>
         <?php if ($todayCount >= 5): ?>
-          <div class="achievement">🏆 เก่ง!</div>
+          <div class="achievement"><i class="fas fa-trophy"></i> เก่ง!</div>
         <?php endif; ?>
       </div>
       <p class="text-xs sm:text-sm text-gray-600 mb-1 font-medium">วันนี้</p>
@@ -501,9 +501,9 @@ $result = $stmt->get_result();
 
     <div class="stat-card stat-card-week count-up" style="animation-delay: 0.2s">
       <div class="flex items-center justify-between mb-3">
-        <div class="text-3xl">📆</div>
+        <div class="text-3xl"><i class="fas fa-calendar-week"></i></div>
         <?php if ($weekCount >= 25): ?>
-          <div class="achievement">🌟 ยอดเยี่ยม!</div>
+          <div class="achievement"><i class="fas fa-star"></i> ยอดเยี่ยม!</div>
         <?php endif; ?>
       </div>
       <p class="text-xs sm:text-sm text-gray-600 mb-1 font-medium">สัปดาห์นี้</p>
@@ -513,9 +513,9 @@ $result = $stmt->get_result();
 
     <div class="stat-card stat-card-month count-up" style="animation-delay: 0.3s">
       <div class="flex items-center justify-between mb-3">
-        <div class="text-3xl">🗓️</div>
+        <div class="text-3xl"><i class="fas fa-calendar-alt"></i></div>
         <?php if ($monthCount >= 100): ?>
-          <div class="achievement">🎯 นักสู้!</div>
+          <div class="achievement"><i class="fas fa-bullseye"></i> นักสู้!</div>
         <?php endif; ?>
       </div>
       <p class="text-xs sm:text-sm text-gray-600 mb-1 font-medium">เดือนนี้</p>
@@ -525,7 +525,7 @@ $result = $stmt->get_result();
 
     <div class="stat-card stat-card-avg count-up" style="animation-delay: 0.4s">
       <div class="flex items-center justify-between mb-3">
-        <div class="text-3xl">📈</div>
+        <div class="text-3xl"><i class="fas fa-chart-line"></i></div>
       </div>
       <p class="text-xs sm:text-sm text-gray-600 mb-1 font-medium">เฉลี่ย/วัน</p>
       <p class="text-2xl sm:text-3xl font-bold text-orange-600" id="avgCount"><?= $avgPerDay ?></p>
@@ -534,9 +534,9 @@ $result = $stmt->get_result();
 
     <div class="stat-card stat-card-total count-up" style="animation-delay: 0.5s">
       <div class="flex items-center justify-between mb-3">
-        <div class="text-3xl">🏆</div>
+        <div class="text-3xl"><i class="fas fa-trophy"></i></div>
         <?php if ($totalCount >= 500): ?>
-          <div class="achievement">👑 ตำนาน!</div>
+          <div class="achievement"><i class="fas fa-crown"></i> ตำนาน!</div>
         <?php endif; ?>
       </div>
       <p class="text-xs sm:text-sm text-gray-600 mb-1 font-medium">ทั้งหมด</p>
@@ -571,13 +571,13 @@ $result = $stmt->get_result();
         ทั้งหมด
       </button>
       <button onclick="filterPeriod('today')" class="filter-btn" data-period="today">
-        📅 วันนี้ (<?= $todayCount ?>)
+        <i class="fas fa-calendar-day mr-1"></i>วันนี้ (<?= $todayCount ?>)
       </button>
       <button onclick="filterPeriod('week')" class="filter-btn" data-period="week">
-        📆 สัปดาห์นี้ (<?= $weekCount ?>)
+        <i class="fas fa-calendar-week mr-1"></i>สัปดาห์นี้ (<?= $weekCount ?>)
       </button>
       <button onclick="filterPeriod('month')" class="filter-btn" data-period="month">
-        🗓️ เดือนนี้ (<?= $monthCount ?>)
+        <i class="fas fa-calendar-alt mr-1"></i>เดือนนี้ (<?= $monthCount ?>)
       </button>
     </div>
   </div>
@@ -641,10 +641,10 @@ $result = $stmt->get_result();
                 <span class="period-badge period-<?= $row['period'] ?>">
                   <?php
                     switch($row['period']) {
-                      case 'today': echo '📅 วันนี้'; break;
-                      case 'week': echo '📆 สัปดาห์นี้'; break;
-                      case 'month': echo '🗓️ เดือนนี้'; break;
-                      default: echo '📁 เก่ากว่า'; break;
+                      case 'today': echo '<i class="fas fa-calendar-day mr-1"></i>วันนี้'; break;
+                      case 'week': echo '<i class="fas fa-calendar-week mr-1"></i>สัปดาห์นี้'; break;
+                      case 'month': echo '<i class="fas fa-calendar-alt mr-1"></i>เดือนนี้'; break;
+                      default: echo '<i class="fas fa-folder mr-1"></i>เก่ากว่า'; break;
                     }
                   ?>
                 </span>
@@ -916,10 +916,10 @@ function showNotification(message, type = 'info') {
   };
 
   const icons = {
-    success: '✅',
-    error: '❌',
-    warning: '⚠️',
-    info: 'ℹ️'
+    success: '<i class="fas fa-check-circle text-green-500"></i>',
+    error: '<i class="fas fa-times-circle text-red-500"></i>',
+    warning: '<i class="fas fa-exclamation-triangle text-yellow-500"></i>',
+    info: '<i class="fas fa-info-circle text-blue-500"></i>'
   };
 
   Swal.fire({

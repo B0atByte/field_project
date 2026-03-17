@@ -41,7 +41,7 @@ function hasColumn(mysqli $conn, string $table, string $column): bool
   return $ok;
 }
 
-$page_title = "📥 นำเข้า/ลบงาน - Field Project";
+$page_title = "นำเข้า/ลบงาน - Field Project";
 include '../components/header.php';
 
 $total_rows = 0;
@@ -53,7 +53,7 @@ $is_delete_mode = false;
 <div class="md:hidden flex items-center justify-between px-6 py-4 bg-white shadow-sm border-b border-gray-200">
   <div class="flex items-center space-x-3">
     <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-      <span class="text-gray-700 text-lg">📥</span>
+      <i class="fas fa-file-import text-gray-500 text-lg"></i>
     </div>
     <h1 class="text-gray-900 font-semibold text-lg">นำเข้างาน</h1>
   </div>
@@ -74,7 +74,7 @@ $is_delete_mode = false;
       <!-- Header Section -->
       <div class="text-center mb-6">
         <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-lg mb-4">
-          <span class="text-2xl">📥</span>
+          <i class="fas fa-file-import text-gray-500 text-2xl"></i>
         </div>
         <h1 class="text-2xl font-semibold text-gray-900 mb-2">
           นำเข้าและจัดการงาน
@@ -94,7 +94,7 @@ $is_delete_mode = false;
             <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
               <h2 class="text-lg font-semibold text-gray-900 flex items-center">
                 <span class="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center mr-2">
-                  📋
+                  <i class="fas fa-clipboard"></i>
                 </span>
                 ฟอร์มนำเข้าข้อมูล
               </h2>
@@ -108,7 +108,7 @@ $is_delete_mode = false;
                 <!-- File Upload Section -->
                 <div class="space-y-3">
                   <label class="block text-base font-semibold text-gray-800 mb-3">
-                    📁 เลือกไฟล์ Excel
+                    <i class="fas fa-folder-open mr-1"></i>เลือกไฟล์ Excel
                   </label>
 
                   <div class="relative">
@@ -141,7 +141,7 @@ $is_delete_mode = false;
                   <div class="bg-gray-50 rounded-lg p-5 border border-gray-200">
                     <div class="flex items-center mb-3">
                       <div class="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center mr-2">
-                        <span class="text-gray-700">🧹</span>
+                        <i class="fas fa-broom text-gray-500"></i>
                       </div>
                       <h3 class="text-base font-semibold text-gray-800">ลบงานอัตโนมัติ</h3>
                     </div>
@@ -169,7 +169,7 @@ $is_delete_mode = false;
                   <div class="bg-gray-50 rounded-lg p-5 border border-gray-200">
                     <div class="flex items-center mb-3">
                       <div class="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center mr-2">
-                        <span class="text-gray-700">🗑️</span>
+                        <i class="fas fa-trash text-gray-500"></i>
                       </div>
                       <h3 class="text-base font-semibold text-gray-800">โหมดลบงาน ปิดการใช้งานชั่วคราว</h3>
                     </div>
@@ -182,7 +182,7 @@ $is_delete_mode = false;
                       </span>
                     </label>
                     <p class="text-xs text-red-600 mt-3 bg-red-100 p-2 rounded-lg">
-                      ⚠️ ระบบจะลบเฉพาะรายการที่มีเลขสัญญาตรงกัน
+                      <i class="fas fa-exclamation-triangle mr-1"></i>ระบบจะลบเฉพาะรายการที่มีเลขสัญญาตรงกัน
                     </p>
                   </div>
                 </div>
@@ -198,13 +198,13 @@ $is_delete_mode = false;
 
                   <a href="../assets/templates/ตัวอย่างไฟล์ อัพโหลด111.xlsx"
                     class="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-lg font-medium shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center">
-                    <span class="mr-2">📥</span>
+                    <i class="fas fa-file-import mr-2"></i>
                     ดาวน์โหลดไฟล์ตัวอย่าง
                   </a>
 
                   <a href="add_job.php"
                     class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-3 rounded-lg font-medium shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center">
-                    <span class="mr-2">✍️</span>
+                    <span class="mr-2"><i class="fas fa-pen"></i></span>
                     เพิ่มงานด้วยตนเอง
                   </a>
                 </div>
@@ -216,7 +216,7 @@ $is_delete_mode = false;
           <div class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div class="flex items-center mb-4">
               <div class="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center mr-2">
-                <span class="text-gray-700">⏳</span>
+                <i class="fas fa-spinner fa-spin text-gray-500"></i>
               </div>
               <h3 class="text-base font-semibold text-gray-800">ความคืบหน้าการนำเข้า</h3>
             </div>
@@ -238,7 +238,7 @@ $is_delete_mode = false;
             <div class="bg-gray-50 px-5 py-4 border-b border-gray-200">
               <div class="flex items-center">
                 <div class="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center mr-2">
-                  <span class="text-gray-700">💡</span>
+                  <span class="text-gray-700"><i class="fas fa-lightbulb"></i></span>
                 </div>
                 <h3 class="text-base font-semibold text-gray-800">คู่มือการใช้งาน</h3>
               </div>
@@ -276,11 +276,11 @@ $is_delete_mode = false;
                 </h4>
                 <ul class="space-y-2 text-sm text-gray-600 ml-4">
                   <li class="flex items-start">
-                    <span class="text-purple-500 mr-2">🚀</span>
+                    <span class="text-purple-500 mr-2"><i class="fas fa-rocket"></i></span>
                     นำเข้าข้อมูลจำนวนมาก
                   </li>
                   <li class="flex items-start">
-                    <span class="text-purple-500 mr-2">🎯</span>
+                    <span class="text-purple-500 mr-2"><i class="fas fa-bullseye"></i></span>
                     ตรวจสอบข้อมูลก่อนนำเข้า
                   </li>
                 </ul>
@@ -562,7 +562,7 @@ $is_delete_mode = false;
                 <p class="text-2xl font-bold text-gray-900 mt-1"><?= number_format($total_rows) ?></p>
               </div>
               <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                <span class="text-xl">📊</span>
+                <i class="fas fa-chart-bar text-gray-500 text-xl"></i>
               </div>
             </div>
           </div>
@@ -575,7 +575,7 @@ $is_delete_mode = false;
                 <p class="text-2xl font-bold text-green-600 mt-1"><?= number_format($imported_count) ?></p>
               </div>
               <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <span class="text-xl">✅</span>
+                <i class="fas fa-check-circle text-green-500 text-xl"></i>
               </div>
             </div>
           </div>
@@ -588,7 +588,7 @@ $is_delete_mode = false;
                 <p class="text-2xl font-bold text-red-600 mt-1"><?= number_format(count($failed_rows)) ?></p>
               </div>
               <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <span class="text-xl">❌</span>
+                <i class="fas fa-times-circle text-red-500 text-xl"></i>
               </div>
             </div>
           </div>
@@ -600,7 +600,7 @@ $is_delete_mode = false;
         <div class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
             <h3 class="text-base font-semibold text-gray-900 flex items-center">
-              <span class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-2">✅</span>
+              <span class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-2"><i class="fas fa-check text-green-600 text-sm"></i></span>
               รายการที่นำเข้าสำเร็จ
             </h3>
           </div>
@@ -646,7 +646,7 @@ $is_delete_mode = false;
         <div class="mt-6 bg-white border border-red-200 rounded-lg shadow-sm overflow-hidden">
           <div class="bg-red-50 px-6 py-4 border-b border-red-200">
             <h3 class="text-base font-semibold text-red-900 flex items-center">
-              <span class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-2">⚠️</span>
+              <span class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-2"><i class="fas fa-exclamation-triangle text-red-500"></i></span>
               รายการที่มีข้อผิดพลาด
             </h3>
           </div>
@@ -712,7 +712,7 @@ $is_delete_mode = false;
 
     // Confirm delete mode
     if (deleteMode) {
-      if (!confirm('⚠️ คุณแน่ใจหรือไม่ที่จะลบงานตามเลขสัญญาในไฟล์นี้?\n\nการดำเนินการนี้ไม่สามารถยกเลิกได้!')) {
+      if (!confirm('คุณแน่ใจหรือไม่ที่จะลบงานตามเลขสัญญาในไฟล์นี้?\n\nการดำเนินการนี้ไม่สามารถยกเลิกได้!')) {
         e.preventDefault();
         return;
       }

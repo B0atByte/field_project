@@ -25,7 +25,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($lockStatus['locked']) {
         $minutes = ceil($lockStatus['remaining'] / 60);
-        $_SESSION['message'] = "🚫 คุณพยายาม login ผิดพลาดหลายครั้ง กรุณารอ {$minutes} นาที";
+        $_SESSION['message'] = "คุณพยายาม login ผิดพลาดหลายครั้ง กรุณารอ {$minutes} นาที";
         header("Location: ../index.php");
         exit;
     }
@@ -44,7 +44,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($user) {
         // 🚫 บัญชีถูกบล็อก
         if ($user['active'] == 0) {
-            $_SESSION['message'] = "🚫 บัญชีนี้ถูกบล็อก กรุณาติดต่อผู้ดูแลระบบ";
+            $_SESSION['message'] = "บัญชีนี้ถูกบล็อก กรุณาติดต่อผู้ดูแลระบบ";
             header("Location: ../index.php");
             exit;
         }
@@ -111,7 +111,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $redirect_url = "dashboard/field.php";
                     break;
                 default:
-                    $_SESSION['message'] = "❌ บทบาทไม่ถูกต้อง";
+                    $_SESSION['message'] = "บทบาทไม่ถูกต้อง";
                     header("Location: ../index.php");
                     exit;
             }
@@ -129,9 +129,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $attemptsLeft = max(0, env('MAX_LOGIN_ATTEMPTS', 5) - $lockStatus['attempts']);
 
     if ($attemptsLeft > 0) {
-        $_SESSION['message'] = "❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง (เหลือ {$attemptsLeft} ครั้ง)";
+        $_SESSION['message'] = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง (เหลือ {$attemptsLeft} ครั้ง)";
     } else {
-        $_SESSION['message'] = "🚫 คุณพยายาม login ผิดพลาดหลายครั้ง กรุณารอสักครู่";
+        $_SESSION['message'] = "คุณพยายาม login ผิดพลาดหลายครั้ง กรุณารอสักครู่";
     }
 
     header("Location: ../index.php");

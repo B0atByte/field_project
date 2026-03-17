@@ -509,10 +509,10 @@ $submitted_end = $_GET['submitted_end'] ?? '';
           <select name="submitted_status" class="w-full form-select">
             <option value="">ทั้งหมด</option>
             <option value="unsent" <?= $submitted_status === 'unsent' ? 'selected' : '' ?>>
-              ⏳ ยังไม่ส่งงาน
+              ยังไม่ส่งงาน
             </option>
             <option value="sent" <?= $submitted_status === 'sent' ? 'selected' : '' ?>>
-              ✅ ส่งงานแล้ว
+              ส่งงานแล้ว
             </option>
           </select>
         </div>
@@ -612,9 +612,9 @@ $submitted_end = $_GET['submitted_end'] ?? '';
             ประเภทงาน
           </label>
           <select id="deleteTypeInput" class="w-full px-4 py-3 text-base border-2 border-slate-200 rounded-lg focus:border-blue-500 bg-white">
-            <option value="pending">⏳ ลบเฉพาะงานที่ยังไม่เสร็จ</option>
-            <option value="completed">✅ ลบเฉพาะงานที่เสร็จแล้ว</option>
-            <option value="all">🧹 ลบทั้งหมด</option>
+            <option value="pending">ลบเฉพาะงานที่ยังไม่เสร็จ</option>
+            <option value="completed">ลบเฉพาะงานที่เสร็จแล้ว</option>
+            <option value="all">ลบทั้งหมด</option>
           </select>
         </div>
         
@@ -841,11 +841,11 @@ $submitted_end = $_GET['submitted_end'] ?? '';
               let badge = '';
 
               if (status === 'เสร็จสิ้น') {
-                badge = '<span class="inline-flex items-center px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">✅ เสร็จสิ้น</span>';
+                badge = '<span class="inline-flex items-center px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full"><i class="fas fa-check mr-1"></i>เสร็จสิ้น</span>';
               } else if (status === 'งานตีกลับ') {
-                badge = '<span class="inline-flex items-center px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">🔄 งานตีกลับ</span>';
+                badge = '<span class="inline-flex items-center px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full"><i class="fas fa-undo mr-1"></i>งานตีกลับ</span>';
               } else {
-                badge = '<span class="inline-flex items-center px-2 py-1 text-xs font-medium text-orange-700 bg-orange-100 rounded-full">⏳ รอดำเนินการ</span>';
+                badge = '<span class="inline-flex items-center px-2 py-1 text-xs font-medium text-orange-700 bg-orange-100 rounded-full"><i class="fas fa-clock mr-1"></i>รอดำเนินการ</span>';
               }
               return badge;
             }

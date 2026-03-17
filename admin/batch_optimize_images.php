@@ -210,7 +210,7 @@ async function startOptimization() {
         title: dryRun ? 'ยืนยันการทดสอบ' : 'ยืนยันการ Optimize',
         html: dryRun
             ? 'คุณต้องการทดสอบการ optimize (ไม่แก้ไขไฟล์จริง)?'
-            : '<strong class="text-red-600">⚠️ คำเตือน:</strong><br>การทำงานนี้จะแก้ไขไฟล์และ database จริง<br>แนะนำให้สำรองข้อมูลก่อน<br><br>ต้องการดำเนินการต่อ?',
+            : '<strong class="text-red-600"><i class="fas fa-exclamation-triangle mr-1"></i>คำเตือน:</strong><br>การทำงานนี้จะแก้ไขไฟล์และ database จริง<br>แนะนำให้สำรองข้อมูลก่อน<br><br>ต้องการดำเนินการต่อ?',
         icon: dryRun ? 'question' : 'warning',
         showCancelButton: true,
         confirmButtonText: 'ยืนยัน',

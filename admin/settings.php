@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
 // Get current settings
 $google_maps_key = getSetting('GOOGLE_MAPS_API_KEY', '');
 
-$page_title = "⚙️ ตั้งค่าระบบ";
+$page_title = "ตั้งค่าระบบ";
 include '../components/header.php';
 include '../components/sidebar.php';
 ?>

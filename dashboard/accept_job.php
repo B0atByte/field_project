@@ -19,7 +19,7 @@ if ($job_id) {
         header("Location: view_job.php?id=" . $job_id);
     } else {
         echo "<script>
-          alert('❌ รับงานไม่สำเร็จ (มีคนรับไปแล้ว?)');
+          alert('รับงานไม่สำเร็จ (มีคนรับไปแล้ว?)');
           window.location.href = 'field.php';
         </script>";
     }

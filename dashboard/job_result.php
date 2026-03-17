@@ -351,11 +351,11 @@ include '../components/header.php';
               <p class="text-lg font-semibold">
                 <?php
                 if ($job['priority'] === 'urgent') {
-                  echo '<span class="text-red-600">🔴 เร่งด่วน</span>';
+                  echo '<span class="text-red-600"><i class="fas fa-circle mr-1"></i>เร่งด่วน</span>';
                 } elseif ($job['priority'] === 'high') {
-                  echo '<span class="text-orange-600">🟠 ด่วน</span>';
+                  echo '<span class="text-orange-600"><i class="fas fa-circle mr-1"></i>ด่วน</span>';
                 } else {
-                  echo '<span class="text-green-600">🟢 ปกติ</span>';
+                  echo '<span class="text-green-600"><i class="fas fa-circle mr-1"></i>ปกติ</span>';
                 }
                 ?>
               </p>
@@ -671,7 +671,7 @@ include '../components/header.php';
 
             <div class="bg-red-50 p-4 rounded-xl mb-4">
               <p class="text-sm text-red-800 font-medium">
-                ⚠️ งานที่ตีกลับจะถูกส่งกลับไปยังภาคสนามเพื่อแก้ไขและส่งใหม่
+                <i class="fas fa-exclamation-triangle mr-1"></i> งานที่ตีกลับจะถูกส่งกลับไปยังภาคสนามเพื่อแก้ไขและส่งใหม่
               </p>
             </div>
 
@@ -744,9 +744,9 @@ include '../components/header.php';
             <div class="text-right">
               <div class="text-3xl mb-1">
                 <?php if ($job['status'] === 'completed'): ?>
-                  ✅
+                  <i class="fas fa-check-circle text-green-500 text-3xl"></i>
                 <?php else: ?>
-                  ⏳
+                  <i class="fas fa-clock text-orange-400 text-3xl"></i>
                 <?php endif; ?>
               </div>
               <p class="text-sm text-gray-600 font-medium">

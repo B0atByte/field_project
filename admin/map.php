@@ -204,8 +204,8 @@ while ($row = $prodRes->fetch_assoc())
             content: `<div class="p-2">
                    <strong class="text-lg">${m.product ?? ''}</strong><br>
                    <div class="mt-2 space-y-1">
-                     <div>📄 สัญญา: <span class="font-semibold">${m.contract ?? ''}</span></div>
-                     <div>📍 ชื่อลูกค้า: <span class="font-semibold">${m.location ?? ''}</span></div>
+                     <div><i class="fas fa-file-alt mr-1"></i>สัญญา: <span class="font-semibold">${m.contract ?? ''}</span></div>
+                     <div><i class="fas fa-map-marker-alt mr-1"></i>ชื่อลูกค้า: <span class="font-semibold">${m.location ?? ''}</span></div>
                      <div>${m.created ? new Date(m.created).toLocaleString('th-TH') : ''}</div>
                    </div>
                    <a href="../dashboard/job_result.php?id=${m.id}" 

@@ -15,7 +15,7 @@ $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_logs'])) {
     if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
-        die("❌ CSRF validation failed");
+        die("CSRF validation failed");
     }
 
     $admin_pass = $_POST['admin_password'] ?? '';
@@ -328,7 +328,7 @@ include '../components/header.php';
           <p class="text-sm text-gray-500 mt-1">ล้างประวัติการแก้ไขทั้งหมด (ต้องยืนยันรหัสผ่าน Admin)</p>
         </div>
 
-        <form method="post" onsubmit="return confirm('⚠️ คุณต้องการล้าง log ทั้งหมดหรือไม่?\n\nการดำเนินการนี้ไม่สามารถยกเลิกได้และจะลบประวัติการแก้ไขทั้งหมดออกจากระบบ');" class="flex flex-col sm:flex-row gap-4">
+        <form method="post" onsubmit="return confirm('คุณต้องการล้าง log ทั้งหมดหรือไม่?\n\nการดำเนินการนี้ไม่สามารถยกเลิกได้และจะลบประวัติการแก้ไขทั้งหมดออกจากระบบ');" class="flex flex-col sm:flex-row gap-4">
           <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
           <div class="flex-1">
             <div class="relative">

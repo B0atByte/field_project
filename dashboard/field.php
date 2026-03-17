@@ -1044,7 +1044,7 @@ function buildUrl($params = [])
         <!-- Empty State -->
         <div class="text-center py-16">
           <div class="bg-gray-50 rounded-2xl p-12 border-2 border-dashed border-gray-200">
-            <div class="text-6xl mb-4">🔍</div>
+            <div class="text-6xl mb-4"><i class="fas fa-search"></i></div>
             <h3 class="text-xl font-bold text-gray-900 mb-2">
               <?php if (!empty($search) || $priority_filter !== 'all' || $favorite_only): ?>
                 ไม่พบงานที่ตรงกับเงื่อนไข

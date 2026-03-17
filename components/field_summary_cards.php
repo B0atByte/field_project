@@ -28,7 +28,7 @@ if ($showType === 'unassigned' || $showType === 'all') {
   <?php if ($showType === 'mine' || $showType === 'all'): ?>
     <div class="bg-green-500 text-white p-6 rounded-xl shadow flex items-center justify-between">
       <div>
-        <h3 class="text-lg font-semibold">📌 งานของฉันที่ต้องวิ่ง</h3>
+        <h3 class="text-lg font-semibold"><i class="fas fa-tasks mr-1"></i>งานของฉันที่ต้องวิ่ง</h3>
         <p class="text-sm">ยังไม่เสร็จ</p>
       </div>
       <div class="text-2xl font-bold"><?= $countMine ?> งาน</div>
@@ -38,7 +38,7 @@ if ($showType === 'unassigned' || $showType === 'all') {
   <?php if ($showType === 'unassigned' || $showType === 'all'): ?>
     <div class="bg-purple-500 text-white p-6 rounded-xl shadow flex items-center justify-between">
       <div>
-        <h3 class="text-lg font-semibold">📚 งานทั้งหมด</h3>
+        <h3 class="text-lg font-semibold"><i class="fas fa-briefcase mr-1"></i>งานทั้งหมด</h3>
         <p class="text-sm">ยังไม่ถูกมอบหมาย</p>
       </div>
       <div class="text-2xl font-bold"><?= $countAll ?> งาน</div>
@@ -49,6 +49,6 @@ if ($showType === 'unassigned' || $showType === 'all') {
 
 <!-- ปุ่มส่วนกลาง -->
 <div class="flex flex-col sm:flex-row sm:gap-4 gap-2 text-center mb-6">
-  <a href="../admin/map.php" class="bg-yellow-400 hover:bg-yellow-500 text-white px-4 py-2 rounded-full shadow text-sm sm:text-base">🗺️ ดูแผนที่รวมงานทั้งหมด</a>
-  <a href="my_completed_jobs.php" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full shadow text-sm sm:text-base">✅ งานที่เสร็จแล้วของฉัน</a>
+  <a href="../admin/map.php" class="bg-yellow-400 hover:bg-yellow-500 text-white px-4 py-2 rounded-full shadow text-sm sm:text-base"><i class="fas fa-map-marked-alt mr-1"></i>ดูแผนที่รวมงานทั้งหมด</a>
+  <a href="my_completed_jobs.php" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full shadow text-sm sm:text-base"><i class="fas fa-check-circle mr-1"></i>งานที่เสร็จแล้วของฉัน</a>
 </div>

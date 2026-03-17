@@ -31,10 +31,10 @@ try {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 
     if ($conn->query($sql)) {
-        $results[] = "✅ สร้างตาราง system_settings สำเร็จ";
+        $results[] = "สร้างตาราง system_settings สำเร็จ";
     }
 } catch (Exception $e) {
-    $errors[] = "❌ สร้างตาราง system_settings ล้มเหลว: " . $e->getMessage();
+    $errors[] = "สร้างตาราง system_settings ล้มเหลว:" . $e->getMessage();
 }
 
 // ขั้นตอนที่ 2: ตรวจสอบว่ามี API key เดิมอยู่ในฐานข้อมูลหรือไม่
@@ -52,21 +52,21 @@ try {
         $key = 'GOOGLE_MAPS_API_KEY';
 
         if ($stmt->execute()) {
-            $results[] = "✅ บันทึก Google Maps API Key เดิมลงฐานข้อมูลสำเร็จ";
-            $results[] = "🔑 API Key: " . substr($old_api_key, 0, 20) . "...";
+            $results[] = "บันทึก Google Maps API Key เดิมลงฐานข้อมูลสำเร็จ";
+            $results[] = "API Key:" . substr($old_api_key, 0, 20) . "...";
         }
     } else {
-        $results[] = "ℹ️ Google Maps API Key มีอยู่ในระบบแล้ว";
+        $results[] = "Google Maps API Key มีอยู่ในระบบแล้ว";
 
         // แสดง API key ปัจจุบัน
         $current = $conn->query("SELECT setting_value FROM system_settings WHERE setting_key = 'GOOGLE_MAPS_API_KEY'");
         $current_row = $current->fetch_assoc();
         if ($current_row) {
-            $results[] = "🔑 API Key ปัจจุบัน: " . substr($current_row['setting_value'], 0, 20) . "...";
+            $results[] = "API Key ปัจจุบัน:" . substr($current_row['setting_value'], 0, 20) . "...";
         }
     }
 } catch (Exception $e) {
-    $errors[] = "❌ บันทึก API key ล้มเหลว: " . $e->getMessage();
+    $errors[] = "บันทึก API key ล้มเหลว: " . $e->getMessage();
 }
 
 // ขั้นตอนที่ 3: ทดสอบฟังก์ชัน getSetting()
@@ -75,13 +75,13 @@ try {
     $test_key = getSetting('GOOGLE_MAPS_API_KEY', '');
 
     if (!empty($test_key)) {
-        $results[] = "✅ ทดสอบฟังก์ชัน getSetting() สำเร็จ";
-        $results[] = "🔑 ดึง API Key ได้: " . substr($test_key, 0, 20) . "...";
+        $results[] = "ทดสอบฟังก์ชัน getSetting() สำเร็จ";
+        $results[] = "ดึง API Key ได้:" . substr($test_key, 0, 20) . "...";
     } else {
-        $errors[] = "⚠️ ฟังก์ชัน getSetting() ดึง API key ไม่ได้ (ค่าว่าง)";
+        $errors[] = "ฟังก์ชัน getSetting() ดึง API key ไม่ได้ (ค่าว่าง)";
     }
 } catch (Exception $e) {
-    $errors[] = "❌ ทดสอบฟังก์ชัน getSetting() ล้มเหลว: " . $e->getMessage();
+    $errors[] = "ทดสอบฟังก์ชัน getSetting() ล้มเหลว:" . $e->getMessage();
 }
 ?>
 <!DOCTYPE html>

@@ -36,15 +36,15 @@ $result = $stmt->get_result();
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>📜 ประวัติงานภาคสนาม</title>
+  <title>ประวัติงานภาคสนาม</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 min-h-screen p-4 sm:p-6">
   <div class="max-w-6xl mx-auto bg-white shadow-md rounded-xl p-6 space-y-6">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-      <h2 class="text-2xl font-bold text-gray-800">📜 ประวัติงานภาคสนามของคุณ</h2>
-      <a href="field.php" class="text-blue-600 hover:underline">🔙 กลับหน้าหลัก</a>
+      <h2 class="text-2xl font-bold text-gray-800"><i class="fas fa-history mr-2"></i>ประวัติงานภาคสนามของคุณ</h2>
+      <a href="field.php" class="text-blue-600 hover:underline"><i class="fas fa-arrow-left mr-1"></i>กลับหน้าหลัก</a>
     </div>
 
     <form method="get" class="flex flex-col sm:flex-row items-start sm:items-center gap-3 text-sm">
@@ -57,7 +57,7 @@ $result = $stmt->get_result();
         <input type="date" name="end" value="<?= htmlspecialchars($end) ?>" class="border px-3 py-1 rounded">
       </div>
       <div class="pt-4 sm:pt-6">
-        <button type="submit" class="bg-blue-600 text-white px-4 py-1.5 rounded hover:bg-blue-700">🔍 กรอง</button>
+        <button type="submit" class="bg-blue-600 text-white px-4 py-1.5 rounded hover:bg-blue-700"><i class="fas fa-filter mr-1"></i>กรอง</button>
       </div>
     </form>
 
@@ -105,7 +105,7 @@ $result = $stmt->get_result();
                       $gps = htmlspecialchars($row['gps']);
                       $gpsUrl = 'https://www.google.com/maps?q=' . urlencode($gps);
                     ?>
-                    <a href="<?= $gpsUrl ?>" target="_blank" class="text-blue-600 hover:underline">📍</a>
+                    <a href="<?= $gpsUrl ?>" target="_blank" class="text-blue-600 hover:underline"><i class="fas fa-map-marker-alt"></i></a>
                   <?php else: ?>
                     -
                   <?php endif; ?>

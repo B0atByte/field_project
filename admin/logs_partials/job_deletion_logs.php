@@ -116,7 +116,7 @@ $showing_to = min($offset + $limit, $total_logs);
     <p class="text-sm text-gray-500 mt-1">ล้างประวัติการลบงานทั้งหมด (ต้องยืนยันรหัสผ่าน Admin)</p>
   </div>
 
-  <form method="post" action="logs.php?tab=job_deletion" onsubmit="return confirm('⚠️ คุณต้องการล้าง Log การลบงานทั้งหมดหรือไม่?\n\nการดำเนินการนี้จะลบประวัติการลบงานทั้งหมดออกจากระบบ และไม่สามารถกู้คืนได้\n\nต้องเป็นผู้ดูแลระบบเท่านั้น');" class="flex flex-col sm:flex-row gap-4">
+  <form method="post" action="logs.php?tab=job_deletion" onsubmit="return confirm('คุณต้องการล้าง Log การลบงานทั้งหมดหรือไม่?\n\nการดำเนินการนี้จะลบประวัติการลบงานทั้งหมดออกจากระบบ และไม่สามารถกู้คืนได้\n\nต้องเป็นผู้ดูแลระบบเท่านั้น');" class="flex flex-col sm:flex-row gap-4">
     <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
     <input type="hidden" name="log_type" value="job_deletion">
     <div class="flex-1">

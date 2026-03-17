@@ -397,16 +397,16 @@ include '../components/header.php';
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">ความเร่งด่วน</label>
                 <select name="priority" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300">
-                  <option value="urgent" <?= $job['priority'] === 'urgent' ? 'selected' : '' ?>>🔴 งานด่วนที่สุด</option>
-                  <option value="high" <?= $job['priority'] === 'high' ? 'selected' : '' ?>>🟠 งานด่วน</option>
-                  <option value="normal" <?= $job['priority'] === 'normal' ? 'selected' : '' ?>>🟢 งานปกติ</option>
+                  <option value="urgent" <?= $job['priority'] === 'urgent' ? 'selected' : '' ?>>งานด่วนที่สุด</option>
+                  <option value="high" <?= $job['priority'] === 'high' ? 'selected' : '' ?>>งานด่วน</option>
+                  <option value="normal" <?= $job['priority'] === 'normal' ? 'selected' : '' ?>>งานปกติ</option>
                 </select>
               </div>
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">สถานะงาน</label>
                 <select name="status" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300">
-                  <option value="pending" <?= ($job['status'] ?? '') === 'pending' ? 'selected' : '' ?>>🟡 ยังไม่เสร็จ</option>
-                  <option value="completed" <?= ($job['status'] ?? '') === 'completed' ? 'selected' : '' ?>>✅ เสร็จแล้ว</option>
+                  <option value="pending" <?= ($job['status'] ?? '') === 'pending' ? 'selected' : '' ?>>ยังไม่เสร็จ</option>
+                  <option value="completed" <?= ($job['status'] ?? '') === 'completed' ? 'selected' : '' ?>>เสร็จแล้ว</option>
                 </select>
               </div>
             </div>

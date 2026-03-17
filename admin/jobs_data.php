@@ -231,7 +231,7 @@ while ($row = $res->fetch_assoc()) {
     'due_date'            => $row['due_date'],
     'created_at'          => date('Y-m-d H:i', strtotime($row['created_at'])),
     'officer_name'        => htmlspecialchars($row['officer_name'] ?? '-'),
-    'priority'            => ['urgent' => '🔴 งานด่วนที่สุด', 'high' => '🟠 งานด่วน', 'normal' => '🟢 งานปกติ'][$row['priority']] ?? '🟢 งานปกติ',
+    'priority'            => ['urgent' => 'งานด่วนที่สุด', 'high' => 'งานด่วน', 'normal' => 'งานปกติ'][$row['priority']] ?? 'งานปกติ',
     'submission_status'   => $submission_status,
     'latest_result'       => htmlspecialchars($row['latest_result'] ?? '-'),
     'department_name'     => htmlspecialchars($row['department_name'] ?? '-'),
