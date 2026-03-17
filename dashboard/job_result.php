@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/session_config.php';
+require_once __DIR__ . '/../includes/permissions.php';
 
 // ตรวจสอบว่า user login แล้วหรือยัง
 if (!isset($_SESSION['user']) || !isset($_SESSION['user']['role'])) {
@@ -226,7 +227,7 @@ include '../components/header.php';
         <!-- Action Buttons - จัดปุ่มให้อยู่ทางขวา -->
         <section class="flex flex-wrap justify-between items-center gap-2 sm:gap-3 animate-fade-in">
           <div class="flex flex-wrap gap-2 sm:gap-3">
-            <?php if (!$isFieldRole): ?>
+            <?php if (!$isFieldRole && hasPermission('action_export_word')): ?>
               <?php if ($job['status'] === 'completed'): ?>
                 <!-- Export Word -->
                 <form action="../admin/export_job_detail_word.php" method="post">

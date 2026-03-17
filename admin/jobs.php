@@ -7,7 +7,6 @@ require_once '../includes/csrf.php';
 
 $current_user_id = $_SESSION['user']['id'];
 $current_user_role = $_SESSION['user']['role'];
-$current_user_can_delete = $_SESSION['user']['can_delete_jobs'] ?? 0;
 
 /* ====== ลบงานทั้งหมดตามสิทธิ์ Admin ====== */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_all']) && hasPermission('action_delete_jobs_bulk')) {

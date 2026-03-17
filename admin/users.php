@@ -1,9 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/session_config.php';
-if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
-  header("Location: ../index.php");
-  exit;
-}
+require_once __DIR__ . '/../includes/permissions.php';
+requirePermission('page_users');
 include '../config/db.php';
 require_once '../includes/csrf.php';
 require_once '../includes/password_validation.php';

@@ -57,15 +57,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = trim($_POST['password']);
     $department_id = (int)$_POST['department_id'];
     $visible_departments = $_POST['visible_departments'] ?? [];
-    $can_delete_jobs = isset($_POST['can_delete_jobs']) ? 1 : 0;
 
     if ($password !== '') {
         $hashed = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $conn->prepare("UPDATE users SET name=?, username=?, role=?, password=?, department_id=?, can_delete_jobs=? WHERE id=?");
-        $stmt->bind_param("ssssiii", $name, $username, $role, $hashed, $department_id, $can_delete_jobs, $id);
+        $stmt = $conn->prepare("UPDATE users SET name=?, username=?, role=?, password=?, department_id=? WHERE id=?");
+        $stmt->bind_param("ssssi" . "i", $name, $username, $role, $hashed, $department_id, $id);
     } else {
-        $stmt = $conn->prepare("UPDATE users SET name=?, username=?, role=?, department_id=?, can_delete_jobs=? WHERE id=?");
-        $stmt->bind_param("sssiii", $name, $username, $role, $department_id, $can_delete_jobs, $id);
+        $stmt = $conn->prepare("UPDATE users SET name=?, username=?, role=?, department_id=? WHERE id=?");
+        $stmt->bind_param("sssii", $name, $username, $role, $department_id, $id);
     }
     $stmt->execute();
 
