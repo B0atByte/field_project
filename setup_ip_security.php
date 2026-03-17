@@ -3,6 +3,7 @@
  * Setup / Management Page for IP Security
  * Allows Admin to authorize dynamic IPs via Cookie (Device Registration).
  */
+session_name('FIELD_PROJECT_SESSION');
 session_start();
 
 // Database Connection
