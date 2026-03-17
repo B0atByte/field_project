@@ -1,5 +1,5 @@
 # Field Management System
-> ระบบบริหารจัดการงานภาคสนาม v3.0
+> ระบบบริหารจัดการงานภาคสนาม v3.1
 
 ระบบจัดการงานสำหรับทีมภาคสนาม รองรับการมอบหมายงาน ติดตามสถานะ บันทึกผล และสร้างรายงาน
 
@@ -16,7 +16,7 @@
 | **Map View** | แผนที่ตำแหน่งงาน (Leaflet) |
 | **Export** | Excel / PDF / Word ทั้งรายเดียวและ Bulk |
 | **Logs** | Login log, Job edit log, Deletion log |
-| **Security** | IP Whitelist, Rate limiting, CSRF, Remember me |
+| **Security** | IP Whitelist, Device Registration, Invite Link, Rate limiting, CSRF, Remember me |
 
 ---
 
@@ -53,11 +53,14 @@ cp .env.example .env
 # 3. Run
 docker compose up -d
 
-# 4. Import DB
-docker exec -i field_mysql mysql -u root -p field_project < SQL/field_project.sql
+# 4. Install dependencies
+docker run --rm -v "$(pwd):/app" composer:latest install --no-dev --ignore-platform-reqs
+
+# 5. Import DB
+docker exec -i field_db mysql -uroot -proot field_project < SQL/field_db_YYYYMMDD.sql
 ```
 
-เปิด `http://localhost` หรือ `http://YOUR_IP`
+เปิด `https://localhost:7080`
 
 ---
 
@@ -109,14 +112,19 @@ field_project/
 
 ## Database
 
-Schema อยู่ที่ `SQL/field_project.sql`
-
-ตารางหลัก: `users`, `jobs`, `job_logs`, `departments`, `login_logs`, `job_deletion_logs`
+ตารางหลัก: `users`, `jobs`, `job_logs`, `departments`, `login_logs`, `job_deletion_logs`, `allowed_ips`, `allowed_devices`, `device_invites`
 
 ---
 
-## Bug Fixes (2026-03-16)
+## Changelog
 
+### v3.1 (2026-03-17)
+- เพิ่มหน้า `setup_ip_security.php` — จัดการ IP Whitelist, Device Registration, Invite Link
+- เพิ่ม `docker/php-custom.ini` — ปิด `expose_php`, `display_errors`
+- จำกัด port MySQL และ phpMyAdmin เฉพาะ localhost
+- อัปเดต SQL backup ล่าสุด
+
+### v3.0 (2026-03-16)
 - เพิ่ม `ob_start()` ใน `session_config.php` ป้องกัน "headers already sent"
 - เพิ่ม `isset($_SESSION['user'])` guard ครอบคลุมทุกไฟล์ (~38 files)
 - เพิ่ม null coalescing guard สำหรับ `fetch_assoc()` chains

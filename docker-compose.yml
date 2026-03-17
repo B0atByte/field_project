@@ -12,7 +12,7 @@ services:
     environment:
       DB_HOST: db
       DB_USER: user
-      DB_PASS: GE62ts3oVqQr639u1KCKfA5DzMDvwli
+      DB_PASS: cvf,bo1234
       DB_NAME: field_project
     depends_on:
       - db
@@ -25,7 +25,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: field_project
       MYSQL_USER: user
-      MYSQL_PASSWORD: GE62ts3oVqQr639u1KCKfA5DzMDvwli
+      MYSQL_PASSWORD: cvf,bo1234
     ports:
       - "127.0.0.1:3307:3306"
     volumes:
