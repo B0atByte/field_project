@@ -25,6 +25,7 @@ function getAllPermissions(): array {
             'action_edit_job'         => 'แก้ไขงาน',
             'action_delete_job'       => 'ลบงาน (รายการ)',
             'action_delete_jobs_bulk' => 'ลบงานทั้งหมด (Bulk)',
+            'action_return_job'       => 'ตีงานกลับเพื่อแก้ไข',
         ],
         'export' => [
             'action_export_excel' => 'Export Excel',

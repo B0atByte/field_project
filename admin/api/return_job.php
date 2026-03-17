@@ -1,9 +1,10 @@
 <?php
 require_once __DIR__ . '/../../includes/session_config.php';
+require_once __DIR__ . '/../../includes/permissions.php';
 header('Content-Type: application/json; charset=utf-8');
 
-// ตรวจสอบการ login และสิทธิ์ (เฉพาะ admin และ manager)
-if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['role'], ['admin', 'manager'])) {
+// ตรวจสอบสิทธิ์ตีงานกลับ
+if (!hasPermission('action_return_job')) {
     echo json_encode(['success' => false, 'message' => 'คุณไม่มีสิทธิ์ในการตีงานกลับ']);
     exit;
 }

@@ -655,8 +655,8 @@ include '../components/header.php';
           <?php endif; ?>
         <?php endif; ?>
 
-        <!-- Return Job Section (Admin/Manager Only) -->
-        <?php if (!$isFieldRole && $job['status'] === 'completed'): ?>
+        <!-- Return Job Section -->
+        <?php if (hasPermission('action_return_job') && $job['status'] === 'completed'): ?>
           <section class="bg-white rounded-2xl shadow-lg border border-red-200 p-6 animate-slide-up">
             <div class="mb-4">
               <h2 class="text-xl font-semibold text-red-700 flex items-center">
