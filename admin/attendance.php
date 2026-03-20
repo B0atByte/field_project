@@ -7,6 +7,10 @@ include '../config/db.php';
 // Filters
 $filter_date  = $_GET['date']    ?? date('Y-m-d');
 $filter_user  = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
+$per_page     = in_array((int)($_GET['per_page'] ?? 25), [10, 25, 50, 100]) ? (int)$_GET['per_page'] : 25;
+$page         = max(1, (int)($_GET['page'] ?? 1));
+$timeline_per = in_array((int)($_GET['tl_per'] ?? 20), [10, 20, 50, 100]) ? (int)$_GET['tl_per'] : 20;
+$timeline_page= max(1, (int)($_GET['tl_page'] ?? 1));
 
 // Validate date
 if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $filter_date)) {
@@ -29,6 +33,21 @@ if ($filter_user > 0) {
     $types   .= 'i';
 }
 
+// นับทั้งหมดก่อน (สำหรับ pagination)
+$count_sql = "
+    SELECT COUNT(DISTINCT CONCAT(DATE(wc.checked_at), '-', wc.user_id)) AS total
+    FROM work_checkins wc
+    JOIN users u ON wc.user_id = u.id
+    WHERE " . implode(' AND ', $where);
+$stmt_c = $conn->prepare($count_sql);
+$stmt_c->bind_param($types, ...$params);
+$stmt_c->execute();
+$total_attendance = (int)$stmt_c->get_result()->fetch_assoc()['total'];
+$stmt_c->close();
+$total_pages = max(1, (int)ceil($total_attendance / $per_page));
+$page = min($page, $total_pages);
+$offset = ($page - 1) * $per_page;
+
 $sql = "
     SELECT u.id AS user_id, u.name AS user_name,
            MIN(CASE WHEN wc.type='checkin'  THEN wc.checked_at END) AS first_checkin,
@@ -44,26 +63,57 @@ $sql = "
     WHERE " . implode(' AND ', $where) . "
     GROUP BY u.id, u.name
     ORDER BY first_checkin ASC
+    LIMIT ? OFFSET ?
 ";
+$params_p = array_merge($params, [$per_page, $offset]);
+$types_p  = $types . 'ii';
 $stmt = $conn->prepare($sql);
-$stmt->bind_param($types, ...$params);
+$stmt->bind_param($types_p, ...$params_p);
 $stmt->execute();
 $attendance = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
-// ดึง raw records ทั้งหมดของวันที่เลือก (timeline)
+// นับ raw records ทั้งหมด (timeline)
+$count_raw = "SELECT COUNT(*) AS total FROM work_checkins wc JOIN users u ON wc.user_id = u.id WHERE " . implode(' AND ', $where);
+$stmt_cr = $conn->prepare($count_raw);
+$stmt_cr->bind_param($types, ...$params);
+$stmt_cr->execute();
+$total_raw = (int)$stmt_cr->get_result()->fetch_assoc()['total'];
+$stmt_cr->close();
+$total_tl_pages = max(1, (int)ceil($total_raw / $timeline_per));
+$timeline_page  = min($timeline_page, $total_tl_pages);
+$tl_offset      = ($timeline_page - 1) * $timeline_per;
+
+// ดึง raw records พร้อม pagination
 $raw_sql = "
     SELECT wc.*, u.name AS user_name
     FROM work_checkins wc
     JOIN users u ON wc.user_id = u.id
     WHERE " . implode(' AND ', $where) . "
     ORDER BY wc.checked_at ASC
+    LIMIT ? OFFSET ?
 ";
+$params_r = array_merge($params, [$timeline_per, $tl_offset]);
+$types_r  = $types . 'ii';
 $stmt2 = $conn->prepare($raw_sql);
-$stmt2->bind_param($types, ...$params);
+$stmt2->bind_param($types_r, ...$params_r);
 $stmt2->execute();
 $raw_records = $stmt2->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt2->close();
+
+// Helper: สร้าง URL query ที่ preserve ค่า filter ปัจจุบัน
+function attendanceUrl(array $overrides = []): string {
+    global $filter_date, $filter_user, $per_page, $page, $timeline_per, $timeline_page;
+    $base = [
+        'date'    => $filter_date,
+        'user_id' => $filter_user,
+        'per_page'=> $per_page,
+        'page'    => $page,
+        'tl_per'  => $timeline_per,
+        'tl_page' => $timeline_page,
+    ];
+    return '?' . http_build_query(array_merge($base, $overrides));
+}
 
 // Users ที่ยังไม่ได้ check-in วันนี้
 $checked_in_ids = array_column($attendance, 'user_id');
@@ -166,11 +216,26 @@ include '../components/header.php';
 
       <!-- Attendance Table -->
       <div class="bg-white rounded-2xl border border-gray-200 shadow-sm mb-6 overflow-hidden">
-        <div class="p-5 border-b border-gray-100 flex items-center gap-2">
-          <i class="fas fa-table text-gray-500"></i>
-          <h2 class="font-bold text-gray-800">รายละเอียดเวลาทำงาน —
-            <?= date('d/m/Y', strtotime($filter_date)) ?>
-          </h2>
+        <div class="p-5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-table text-gray-500"></i>
+            <h2 class="font-bold text-gray-800">รายละเอียดเวลาทำงาน —
+              <?= date('d/m/Y', strtotime($filter_date)) ?>
+            </h2>
+            <span class="text-xs text-gray-400">(<?= $total_attendance ?> รายการ)</span>
+          </div>
+          <div class="flex items-center gap-2 text-sm">
+            <span class="text-gray-500">แสดง</span>
+            <select onchange="window.location.href=this.value" class="border border-gray-300 rounded-lg px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+              <?php foreach ([10, 25, 50, 100] as $opt): ?>
+                <option value="<?= attendanceUrl(['per_page' => $opt, 'page' => 1]) ?>"
+                  <?= $per_page === $opt ? 'selected' : '' ?>>
+                  <?= $opt ?> รายการ
+                </option>
+              <?php endforeach; ?>
+            </select>
+            <span class="text-gray-500">/ หน้า</span>
+          </div>
         </div>
         <?php if (empty($attendance)): ?>
           <div class="p-10 text-center text-gray-400">
@@ -257,6 +322,34 @@ include '../components/header.php';
               </tbody>
             </table>
           </div>
+          <?php if ($total_pages > 1): ?>
+            <div class="px-5 py-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3">
+              <span class="text-sm text-gray-500">
+                หน้า <?= $page ?> / <?= $total_pages ?>
+                &nbsp;·&nbsp; แสดง <?= count($attendance) ?> จาก <?= $total_attendance ?> รายการ
+              </span>
+              <div class="flex items-center gap-1">
+                <?php if ($page > 1): ?>
+                  <a href="<?= attendanceUrl(['page' => 1]) ?>" class="px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition">«</a>
+                  <a href="<?= attendanceUrl(['page' => $page - 1]) ?>" class="px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition">‹</a>
+                <?php endif; ?>
+                <?php
+                $start_p = max(1, $page - 2);
+                $end_p   = min($total_pages, $page + 2);
+                for ($p = $start_p; $p <= $end_p; $p++): ?>
+                  <a href="<?= attendanceUrl(['page' => $p]) ?>"
+                     class="px-3 py-1.5 rounded-lg text-sm font-semibold transition
+                            <?= $p === $page ? 'bg-blue-600 text-white border border-blue-600' : 'border border-gray-200 text-gray-600 hover:bg-gray-50' ?>">
+                    <?= $p ?>
+                  </a>
+                <?php endfor; ?>
+                <?php if ($page < $total_pages): ?>
+                  <a href="<?= attendanceUrl(['page' => $page + 1]) ?>" class="px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition">›</a>
+                  <a href="<?= attendanceUrl(['page' => $total_pages]) ?>" class="px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition">»</a>
+                <?php endif; ?>
+              </div>
+            </div>
+          <?php endif; ?>
         <?php endif; ?>
       </div>
 
@@ -278,11 +371,26 @@ include '../components/header.php';
       <?php endif; ?>
 
       <!-- Timeline of raw records -->
-      <?php if (!empty($raw_records)): ?>
+      <?php if ($total_raw > 0): ?>
         <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-          <div class="p-5 border-b border-gray-100 flex items-center gap-2">
-            <i class="fas fa-history text-gray-500"></i>
-            <h2 class="font-bold text-gray-800">Timeline การลงเวลาทั้งหมด</h2>
+          <div class="p-5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-history text-gray-500"></i>
+              <h2 class="font-bold text-gray-800">Timeline การลงเวลาทั้งหมด</h2>
+              <span class="text-xs text-gray-400">(<?= $total_raw ?> รายการ)</span>
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+              <span class="text-gray-500">แสดง</span>
+              <select onchange="window.location.href=this.value" class="border border-gray-300 rounded-lg px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <?php foreach ([10, 20, 50, 100] as $opt): ?>
+                  <option value="<?= attendanceUrl(['tl_per' => $opt, 'tl_page' => 1]) ?>"
+                    <?= $timeline_per === $opt ? 'selected' : '' ?>>
+                    <?= $opt ?> รายการ
+                  </option>
+                <?php endforeach; ?>
+              </select>
+              <span class="text-gray-500">/ หน้า</span>
+            </div>
           </div>
           <div class="divide-y divide-gray-50">
             <?php foreach ($raw_records as $rec): ?>
@@ -323,6 +431,34 @@ include '../components/header.php';
               </div>
             <?php endforeach; ?>
           </div>
+          <?php if ($total_tl_pages > 1): ?>
+            <div class="px-5 py-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3">
+              <span class="text-sm text-gray-500">
+                หน้า <?= $timeline_page ?> / <?= $total_tl_pages ?>
+                &nbsp;·&nbsp; แสดง <?= count($raw_records) ?> จาก <?= $total_raw ?> รายการ
+              </span>
+              <div class="flex items-center gap-1">
+                <?php if ($timeline_page > 1): ?>
+                  <a href="<?= attendanceUrl(['tl_page' => 1]) ?>" class="px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition">«</a>
+                  <a href="<?= attendanceUrl(['tl_page' => $timeline_page - 1]) ?>" class="px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition">‹</a>
+                <?php endif; ?>
+                <?php
+                $tl_start = max(1, $timeline_page - 2);
+                $tl_end   = min($total_tl_pages, $timeline_page + 2);
+                for ($tp = $tl_start; $tp <= $tl_end; $tp++): ?>
+                  <a href="<?= attendanceUrl(['tl_page' => $tp]) ?>"
+                     class="px-3 py-1.5 rounded-lg text-sm font-semibold transition
+                            <?= $tp === $timeline_page ? 'bg-blue-600 text-white border border-blue-600' : 'border border-gray-200 text-gray-600 hover:bg-gray-50' ?>">
+                    <?= $tp ?>
+                  </a>
+                <?php endfor; ?>
+                <?php if ($timeline_page < $total_tl_pages): ?>
+                  <a href="<?= attendanceUrl(['tl_page' => $timeline_page + 1]) ?>" class="px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition">›</a>
+                  <a href="<?= attendanceUrl(['tl_page' => $total_tl_pages]) ?>" class="px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition">»</a>
+                <?php endif; ?>
+              </div>
+            </div>
+          <?php endif; ?>
         </div>
       <?php endif; ?>
 
