@@ -5,6 +5,7 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'field') {
   exit;
 }
 include '../config/db.php';
+require_once __DIR__ . '/../includes/csrf.php';
 
 $userId = $_SESSION['user']['id'];
 
@@ -184,6 +185,8 @@ function buildUrl($params = [])
   <title>งานของฉัน (<?= number_format($total_jobs) ?>) | ระบบจัดการงาน</title>
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes, maximum-scale=5.0" />
+  <?= csrfMetaTag() ?>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
@@ -810,6 +813,59 @@ function buildUrl($params = [])
     .toast-info {
       border-left: 4px solid #3b82f6;
     }
+
+    /* ===== Work Check-in Card ===== */
+    .checkin-card {
+      background: #ffffff;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 20px;
+      padding: 16px 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      transition: all 0.3s ease;
+    }
+
+    .checkin-status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .checkin-status-dot.in  { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,.25); }
+    .checkin-status-dot.out { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.25); }
+
+    .checkin-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 14px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .checkin-btn:active { transform: scale(0.96); }
+    .checkin-btn.btn-in  { background: #10b981; color: #fff; }
+    .checkin-btn.btn-in:hover  { background: #059669; box-shadow: 0 4px 12px rgba(16,185,129,.35); }
+    .checkin-btn.btn-out { background: #ef4444; color: #fff; }
+    .checkin-btn.btn-out:hover { background: #dc2626; box-shadow: 0 4px 12px rgba(239,68,68,.35); }
+    .checkin-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+    .checkin-elapsed {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      color: #1d4ed8;
+    }
+
+    @keyframes dotPulse {
+      0%,100% { transform: scale(1); opacity: 1; }
+      50%      { transform: scale(1.35); opacity: 0.7; }
+    }
+    .dot-animate { animation: dotPulse 1.8s ease-in-out infinite; }
   </style>
 
   <script>
@@ -1036,6 +1092,43 @@ function buildUrl($params = [])
         </div>
       </div>
     </header>
+
+    <!-- Work Check-in Banner -->
+    <div class="px-4 pt-4">
+      <div class="checkin-card" id="checkinCard">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+
+          <!-- Status Info -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <span id="checkinDot" class="checkin-status-dot out"></span>
+              <span id="checkinLabel" class="text-sm font-bold text-gray-700">กำลังโหลด...</span>
+            </div>
+            <div id="checkinDetail" class="text-xs text-gray-500 space-y-0.5 hidden">
+              <div id="checkinTime"></div>
+              <div id="checkinLocation" class="truncate"></div>
+              <div id="checkinElapsedWrap" class="hidden">
+                ระยะเวลาปฏิบัติงาน: <span id="checkinElapsed" class="checkin-elapsed">0:00:00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Buttons -->
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <button id="btnCheckin" class="checkin-btn btn-in" onclick="doCheckin('checkin')" disabled>
+              <i class="fas fa-sign-in-alt"></i>
+              <span>เข้างาน</span>
+            </button>
+            <button id="btnCheckout" class="checkin-btn btn-out" onclick="doCheckin('checkout')" disabled>
+              <i class="fas fa-sign-out-alt"></i>
+              <span>ออกงาน</span>
+            </button>
+            <a href="my_completed_jobs.php" class="text-xs text-blue-500 underline ml-1 whitespace-nowrap hidden sm:block">ประวัติ</a>
+          </div>
+
+        </div>
+      </div>
+    </div>
 
     <!-- Content Area -->
     <main class="p-4 pb-24">
@@ -1581,6 +1674,138 @@ function buildUrl($params = [])
       if (savedView === 'table') {
         $('#btnTable').click();
       }
+
+      // ===== Work Check-in System =====
+      const csrfToken = $('meta[name="csrf-token"]').attr('content') || '';
+      let checkinState = null; // 'in' | 'out' | null
+      let firstCheckinAt = null;
+      let elapsedTimer = null;
+
+      function fmtDatetime(str) {
+        if (!str) return '';
+        const d = new Date(str.replace(' ', 'T'));
+        if (isNaN(d)) return str;
+        return d.toLocaleString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: 'short', year: 'numeric' });
+      }
+
+      function fmtElapsed(ms) {
+        const s = Math.floor(ms / 1000);
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        const sec = s % 60;
+        return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+      }
+
+      function updateCheckinUI(latest, firstCheckin) {
+        const isIn = latest && latest.type === 'checkin';
+        checkinState = isIn ? 'in' : 'out';
+
+        $('#checkinDot')
+          .removeClass('in out dot-animate')
+          .addClass(isIn ? 'in dot-animate' : 'out');
+
+        $('#checkinLabel').text(isIn ? 'กำลังปฏิบัติงาน' : 'ยังไม่ได้ลงเวลาเข้างานวันนี้');
+
+        if (latest) {
+          $('#checkinDetail').removeClass('hidden');
+          const typeLabel = latest.type === 'checkin' ? 'เข้างาน' : 'ออกงาน';
+          $('#checkinTime').html(`<i class="fas fa-clock text-gray-400 mr-1"></i>${typeLabel}: ${fmtDatetime(latest.checked_at)}`);
+          if (latest.address) {
+            $('#checkinLocation').html(`<i class="fas fa-map-marker-alt text-gray-400 mr-1"></i>${latest.address}`);
+          } else if (latest.lat && latest.lng) {
+            $('#checkinLocation').html(`<i class="fas fa-map-marker-alt text-gray-400 mr-1"></i>${parseFloat(latest.lat).toFixed(6)}, ${parseFloat(latest.lng).toFixed(6)}`);
+          } else {
+            $('#checkinLocation').html(`<i class="fas fa-map-marker-alt text-gray-400 mr-1"></i>ไม่ระบุพิกัด`);
+          }
+        } else {
+          $('#checkinDetail').addClass('hidden');
+        }
+
+        // Elapsed timer
+        clearInterval(elapsedTimer);
+        if (isIn && firstCheckin) {
+          firstCheckinAt = new Date(firstCheckin.checked_at.replace(' ', 'T'));
+          $('#checkinElapsedWrap').removeClass('hidden');
+          elapsedTimer = setInterval(() => {
+            $('#checkinElapsed').text(fmtElapsed(Date.now() - firstCheckinAt));
+          }, 1000);
+        } else {
+          firstCheckinAt = null;
+          $('#checkinElapsedWrap').addClass('hidden');
+        }
+
+        // Buttons
+        $('#btnCheckin').prop('disabled', isIn);
+        $('#btnCheckout').prop('disabled', !isIn);
+      }
+
+      function loadCheckinStatus() {
+        $.get('api/checkin_status.php', function(res) {
+          if (res.success) {
+            updateCheckinUI(res.latest, res.first_checkin);
+          }
+        }).fail(function() {
+          $('#checkinLabel').text('ไม่สามารถโหลดสถานะได้');
+        });
+      }
+
+      window.doCheckin = function(type) {
+        const btn = type === 'checkin' ? $('#btnCheckin') : $('#btnCheckout');
+        btn.prop('disabled', true).find('span').text(type === 'checkin' ? 'กำลังลงเวลา...' : 'กำลังออก...');
+
+        if (!navigator.geolocation) {
+          sendCheckin(type, null, null, null);
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          function(pos) {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            // Reverse geocode (ไม่บังคับ — ถ้า network ดี)
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=th`)
+              .then(r => r.json())
+              .then(geo => {
+                const addr = geo.display_name || '';
+                sendCheckin(type, lat, lng, addr);
+              })
+              .catch(() => sendCheckin(type, lat, lng, null));
+          },
+          function() {
+            // GPS denied/failed — send without coords
+            sendCheckin(type, null, null, null);
+          },
+          { timeout: 8000, maximumAge: 30000 }
+        );
+      };
+
+      function sendCheckin(type, lat, lng, address) {
+        $.ajax({
+          url: 'api/checkin.php',
+          method: 'POST',
+          contentType: 'application/json',
+          headers: { 'X-CSRF-TOKEN': csrfToken },
+          data: JSON.stringify({ type, lat, lng, address }),
+          success: function(res) {
+            if (res.success) {
+              showToast(res.message, 'success');
+              loadCheckinStatus();
+            } else {
+              showToast(res.message || 'เกิดข้อผิดพลาด', 'error');
+              loadCheckinStatus();
+            }
+          },
+          error: function() {
+            showToast('ไม่สามารถเชื่อมต่อได้', 'error');
+            loadCheckinStatus();
+          }
+        });
+      }
+
+      // โหลดสถานะตอนเปิดหน้า
+      loadCheckinStatus();
+
+      // ===== END Work Check-in =====
 
       // Welcome message
       <?php if (empty($search) && $priority_filter === 'all' && !$favorite_only): ?>

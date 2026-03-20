@@ -121,6 +121,29 @@ CREATE TABLE `jobs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ============================================================
+-- Work check-in / check-out attendance (added 2026-03)
+-- Stores each clock-in and clock-out event for field users.
+-- One row per event; summary is computed on the fly.
+-- ============================================================
+
+DROP TABLE IF EXISTS `work_checkins`;
+CREATE TABLE `work_checkins` (
+  `id`         int          NOT NULL AUTO_INCREMENT,
+  `user_id`    int          NOT NULL,
+  `type`       enum('checkin','checkout') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `latitude`   decimal(10,8) DEFAULT NULL,
+  `longitude`  decimal(11,8) DEFAULT NULL,
+  `address`    text         COLLATE utf8mb4_unicode_ci,
+  `note`       text         COLLATE utf8mb4_unicode_ci,
+  `checked_at` datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id`   (`user_id`),
+  KEY `idx_checked_at` (`checked_at`),
+  KEY `idx_user_date`  (`user_id`, `checked_at`),
+  CONSTRAINT `fk_wc_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
 -- Department visibility (which department can see which)
 -- ============================================================
 

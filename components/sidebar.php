@@ -151,6 +151,17 @@
       <?php endif; ?>
 
       <?php if (hasPermission('page_logs')): ?>
+      <a href="../admin/attendance.php"
+        class="group flex items-center px-4 py-2.5 text-gray-600 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-all font-medium">
+        <div
+          class="w-8 h-8 bg-white border border-gray-100 group-hover:bg-blue-100 group-hover:border-blue-100 rounded-lg flex items-center justify-center shadow-sm">
+          <i class="fas fa-user-clock text-sm text-gray-500 group-hover:text-blue-600"></i>
+        </div>
+        <span class="ml-3 text-sm">บันทึกเวลาทำงาน</span>
+      </a>
+      <?php endif; ?>
+
+      <?php if (hasPermission('page_logs')): ?>
       <a href="../admin/logs.php"
         class="group flex items-center px-4 py-2.5 text-gray-600 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-all font-medium">
         <div
