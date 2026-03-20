@@ -4,9 +4,15 @@
  */
 
 require_once __DIR__ . '/../../includes/session_config.php';
-if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['role'], ['admin', 'manager'])) {
+require_once __DIR__ . '/../../includes/permissions.php';
+if (!isset($_SESSION['user'])) {
     header('Content-Type: application/json');
     echo json_encode(['error' => 'Unauthorized']);
+    exit;
+}
+if (!hasPermission('action_export_word')) {
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'ไม่มีสิทธิ์ Export']);
     exit;
 }
 

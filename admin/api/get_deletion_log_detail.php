@@ -1,9 +1,10 @@
 <?php
 require_once __DIR__ . '/../../includes/session_config.php';
+require_once __DIR__ . '/../../includes/permissions.php';
 header('Content-Type: application/json; charset=utf-8');
 
 // ตรวจสอบการ login และสิทธิ์
-if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
+if (!isset($_SESSION['user']) || !hasPermission('page_logs')) {
     echo json_encode(['success' => false, 'message' => 'ไม่มีสิทธิ์เข้าถึง']);
     exit;
 }

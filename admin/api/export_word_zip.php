@@ -28,10 +28,15 @@ register_shutdown_function(function () {
  * Export multiple jobs to Word files and create ZIP
  */
 require_once __DIR__ . '/../../includes/session_config.php';
+require_once __DIR__ . '/../../includes/permissions.php';
 header('Content-Type: application/json; charset=utf-8');
 
-if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['role'], ['admin', 'manager'])) {
+if (!isset($_SESSION['user'])) {
     echo json_encode(['success' => false, 'message' => 'ไม่มีสิทธิ์เข้าถึง']);
+    exit;
+}
+if (!hasPermission('action_export_word')) {
+    echo json_encode(['success' => false, 'message' => 'ไม่มีสิทธิ์ Export Word']);
     exit;
 }
 
