@@ -48,7 +48,7 @@ $sql = "
 $stmt = $conn->prepare($sql);
 $stmt->bind_param($types, ...$params);
 $stmt->execute();
-$attendance = $stmt->get_result()->fetchAll(MYSQLI_ASSOC);
+$attendance = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
 // ดึง raw records ทั้งหมดของวันที่เลือก (timeline)
@@ -62,7 +62,7 @@ $raw_sql = "
 $stmt2 = $conn->prepare($raw_sql);
 $stmt2->bind_param($types, ...$params);
 $stmt2->execute();
-$raw_records = $stmt2->get_result()->fetchAll(MYSQLI_ASSOC);
+$raw_records = $stmt2->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt2->close();
 
 // Users ที่ยังไม่ได้ check-in วันนี้
