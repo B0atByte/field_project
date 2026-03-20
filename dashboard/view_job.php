@@ -857,8 +857,7 @@ $date_now = date("Y-m-d\TH:i");
 
           <!-- Images -->
           <div class="mb-6">
-            <label class="block text-sm sm:text-base font-bold text-gray-900 mb-2 required"><i class="fas fa-camera mr-1"></i>รูปถ่าย (ต้องอัปโหลด 4
-              รูป)</label>
+            <label class="block text-sm sm:text-base font-bold text-gray-900 mb-2 required"><i class="fas fa-camera mr-1"></i>รูปถ่าย (ต้องอัปโหลด 6 รูป)</label>
             <div class="file-upload" id="fileUploadArea">
               <input type="file" name="images[]" multiple accept="image/*" class="hidden" id="imageInput"
                 onchange="handleFileSelection(this)">
@@ -870,10 +869,10 @@ $date_now = date("Y-m-d\TH:i");
               </div>
             </div>
             <div id="imageValidation" class="validation-message validation-error hidden">
-              กรุณาอัปโหลดรูปภาพ 4 รูป
+              กรุณาอัปโหลดรูปภาพ 6 รูป
             </div>
             <div id="imageSuccess" class="validation-message validation-success hidden">
-              <i class="fas fa-check-circle mr-1"></i>อัปโหลดรูปภาพครบ 4 รูปแล้ว
+              <i class="fas fa-check-circle mr-1"></i>อัปโหลดรูปภาพครบ 6 รูปแล้ว
             </div>
 
             <div id="imagePreview" class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 hidden"></div>
@@ -1008,7 +1007,7 @@ $date_now = date("Y-m-d\TH:i");
         hideValidation('gpsSuccess');
       }
 
-      if (images === 4) {
+      if (images === 6) {
         completedSteps++;
         hideValidation('imageValidation');
         showValidation('imageSuccess', 'success');
@@ -1059,7 +1058,7 @@ $date_now = date("Y-m-d\TH:i");
       const gps = document.getElementById('gps').value.trim();
       const images = uploadedImages.length;
 
-      if (!result || !note || !gps || images !== 4) {
+      if (!result || !note || !gps || images !== 6) {
         return false;
       }
       return true;
@@ -1234,8 +1233,8 @@ $date_now = date("Y-m-d\TH:i");
     }
 
     function handleFiles(files) {
-      if (files.length > 4) {
-        showNotification('อัปโหลดได้ไม่เกิน 4 รูป', 'error');
+      if (files.length > 6) {
+        showNotification('อัปโหลดได้ไม่เกิน 6 รูป', 'error');
         return;
       }
 

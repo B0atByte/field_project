@@ -183,21 +183,26 @@ try {
 function createWordDocument($job, $temp_dir)
 {
     $phpWord = new PhpWord();
-    $section = $phpWord->addSection();
+    $section = $phpWord->addSection([
+        'marginTop'    => 720,
+        'marginBottom' => 720,
+        'marginLeft'   => 900,
+        'marginRight'  => 900,
+    ]);
 
     // Styles
-    $h1 = ['name' => 'TH Sarabun New', 'size' => 16, 'bold' => true];
+    $h1      = ['name' => 'TH Sarabun New', 'size' => 16, 'bold' => true];
     $label14 = ['name' => 'TH Sarabun New', 'size' => 14, 'bold' => true];
     $value14 = ['name' => 'TH Sarabun New', 'size' => 14];
     $centered = ['alignment' => 'center'];
 
     // Header
     $section->addText('รายงานผลการลงพื้นที่', $h1, $centered);
-    $section->addTextBreak(1);
 
-    // Helper function for styled lines
+    // Helper function for styled lines (compact spacing)
     $addLineStyled = function ($section, $items) {
-        $textrun = $section->addTextRun();
+        $paraStyle = ['spacing' => ['before' => 0, 'after' => 0, 'line' => 240, 'lineRule' => 'auto']];
+        $textrun = $section->addTextRun($paraStyle);
         foreach ($items as $item) {
             $textrun->addText($item['label'], ['bold' => true, 'name' => 'TH Sarabun New', 'size' => 14]);
             $textrun->addText(' ' . $item['value'] . '   ', ['name' => 'TH Sarabun New', 'size' => 14]);
@@ -247,32 +252,41 @@ function createWordDocument($job, $temp_dir)
         ['label' => 'พิกัด:', 'value' => $job['gps'] ?? '-'],
     ]);
 
-    $section->addTextBreak(1);
-
-    // Images
+    // Images (3 columns per row)
     if (!empty($job['images'])) {
         $images = json_decode($job['images'], true);
         if (is_array($images) && count($images) > 0) {
             $section->addText('รูปภาพประกอบ', $label14, $centered);
-            $section->addTextBreak(1);
 
-            $table = $section->addTable(['alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER]);
+            $table = $section->addTable([
+                'alignment'   => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER,
+                'cellSpacing' => 50,
+            ]);
             $count = 0;
 
             foreach ($images as $img) {
-                $paths = ImageOptimizer::getImagePaths($img);
+                $paths   = ImageOptimizer::getImagePaths($img);
                 $imgPath = __DIR__ . '/../../uploads/job_photos/' . $paths['original'];
 
                 if (file_exists($imgPath)) {
-                    if ($count % 2 === 0) {
-                        $table->addRow();
+                    if ($count % 3 === 0) {
+                        $table->addRow(2400);
                     }
-                    $table->addCell(3000)->addImage($imgPath, [
-                        'width' => 180,
-                        'height' => 135,
-                        'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
+                    $table->addCell(2800)->addImage($imgPath, [
+                        'width'     => 175,
+                        'height'    => 131,
+                        'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,
                     ]);
                     $count++;
+                    if ($count >= 6) break;
+                }
+            }
+
+            // เติม cell ว่างแถวสุดท้าย
+            $remainder = $count % 3;
+            if ($remainder !== 0) {
+                for ($i = $remainder; $i < 3; $i++) {
+                    $table->addCell(2800);
                 }
             }
         }

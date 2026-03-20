@@ -59,22 +59,29 @@ if (!$job)
     die("ไม่พบข้อมูล");
 
 $phpWord = new PhpWord();
-$section = $phpWord->addSection();
+$phpWord->getSettings()->setThemeFontLang(new \PhpOffice\PhpWord\ComplexType\ProofErr());
+$section = $phpWord->addSection([
+    'marginTop'    => 720,   // 0.5 นิ้ว
+    'marginBottom' => 720,
+    'marginLeft'   => 900,   // 0.625 นิ้ว
+    'marginRight'  => 900,
+]);
 
 // === STYLES ===
-$h1 = ['name' => 'TH Sarabun New', 'size' => 16, 'bold' => true];
+$h1      = ['name' => 'TH Sarabun New', 'size' => 16, 'bold' => true];
 $label14 = ['name' => 'TH Sarabun New', 'size' => 14, 'bold' => true];
 $value14 = ['name' => 'TH Sarabun New', 'size' => 14];
 $centered = ['alignment' => 'center'];
+$paraCompact = ['spacing' => ['before' => 0, 'after' => 0, 'line' => 240, 'lineRule' => 'auto']];
 
 // === HEADER ===
 $section->addText('รายงานผลการลงพื้นที่', $h1, $centered);
-$section->addTextBreak(1);
 
 // === FORMAT แบบหัวข้อหนา ข้อมูลบาง ===
 function addLineStyled($section, $items = [])
 {
-    $textrun = $section->addTextRun();
+    $paraStyle = ['spacing' => ['before' => 0, 'after' => 0, 'line' => 240, 'lineRule' => 'auto']];
+    $textrun = $section->addTextRun($paraStyle);
     foreach ($items as $item) {
         $textrun->addText($item['label'], ['bold' => true, 'name' => 'TH Sarabun New', 'size' => 14]);
         $textrun->addText(' ' . $item['value'] . '   ', ['name' => 'TH Sarabun New', 'size' => 14]);
@@ -106,8 +113,6 @@ addLineStyled($section, [
     ['label' => 'สถานที่ลง:', 'value' => $job['location_area'] ?? '-'],
 ]);
 
-$section->addTextBreak(1);
-
 // ผลการลงพื้นที่
 addLineStyled($section, [
     ['label' => 'ผลการลงพื้นที่:', 'value' => $job['result'] ?? '-'],
@@ -123,32 +128,39 @@ addLineStyled($section, [
     ['label' => 'พิกัด:', 'value' => $job['gps'] ?? '-'],
 ]);
 
-$section->addTextBreak(1);
-
 // === รูปภาพ ===
 if (!empty($job['images'])) {
     $section->addText('รูปภาพประกอบ', $label14, $centered);
-    $section->addTextBreak(1);
 
     $images = json_decode($job['images'], true);
     require_once __DIR__ . '/../includes/image_optimizer.php';
 
-    $table = $section->addTable(['alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER]);
+    $table = $section->addTable([
+        'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER,
+        'cellSpacing' => 50,
+    ]);
     $count = 0;
 
     foreach ($images as $img) {
         $paths = ImageOptimizer::getImagePaths($img);
         $imgPath = '../uploads/job_photos/' . $paths['original'];
         if (file_exists($imgPath)) {
-            if ($count % 2 === 0) {
-                $table->addRow();
+            if ($count % 3 === 0) {
+                $table->addRow(2400);
             }
-            $table->addCell(3000)->addImage($imgPath, [
-                'width' => 180,
-                'height' => 135,
-                'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
+            $table->addCell(2800)->addImage($imgPath, [
+                'width' => 175,
+                'height' => 131,
+                'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,
             ]);
             $count++;
+        }
+    }
+    // เติม cell ว่างให้ครบแถวสุดท้าย
+    $remainder = $count % 3;
+    if ($remainder !== 0) {
+        for ($i = $remainder; $i < 3; $i++) {
+            $table->addCell(2800);
         }
     }
 }

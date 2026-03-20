@@ -165,7 +165,8 @@ $created_files = [];
 // === Helper Function (ประกาศนอก loop) ===
 function addLineStyled($section, $items = [])
 {
-    $textrun = $section->addTextRun();
+    $paraStyle = ['spacing' => ['before' => 0, 'after' => 0, 'line' => 240, 'lineRule' => 'auto']];
+    $textrun = $section->addTextRun($paraStyle);
     foreach ($items as $item) {
         $textrun->addText($item['label'], ['bold' => true, 'name' => 'TH Sarabun New', 'size' => 14]);
         $textrun->addText(' ' . $item['value'] . '   ', ['name' => 'TH Sarabun New', 'size' => 14]);
@@ -175,17 +176,21 @@ function addLineStyled($section, $items = [])
 foreach ($jobs as $job) {
     try {
         $phpWord = new PhpWord();
-        $section = $phpWord->addSection();
+        $section = $phpWord->addSection([
+            'marginTop'    => 720,
+            'marginBottom' => 720,
+            'marginLeft'   => 900,
+            'marginRight'  => 900,
+        ]);
 
         // === STYLES ===
-        $h1 = ['name' => 'TH Sarabun New', 'size' => 16, 'bold' => true];
+        $h1      = ['name' => 'TH Sarabun New', 'size' => 16, 'bold' => true];
         $label14 = ['name' => 'TH Sarabun New', 'size' => 14, 'bold' => true];
         $value14 = ['name' => 'TH Sarabun New', 'size' => 14];
         $centered = ['alignment' => 'center'];
 
         // === HEADER ===
         $section->addText('รายงานผลการลงพื้นที่', $h1, $centered);
-        $section->addTextBreak(1);
 
         // แถว 1: เลขที่สัญญา | เช่าซื้อชื่อ | กลุ่มงาน
         addLineStyled($section, [
@@ -218,50 +223,59 @@ foreach ($jobs as $job) {
             ['label' => 'ผลการลง:', 'value' => $job['result'] ?? '-'],
         ]);
 
-        // แถว 6: หมายเหตุ
-        $section->addText('หมายเหตุ:', $label14);
-        $section->addText($job['note'] ?? '-', $value14);
-        $section->addTextBreak(1);
-
-        // === รูปภาพ ===
-        if (!empty($job['images'])) {
-            $section->addText('รูปภาพประกอบ:', $label14);
-            $section->addTextBreak(1);
-
-            $images_array = json_decode($job['images'], true);
-            if (is_array($images_array)) {
-                $img_count = 0;
-                foreach ($images_array as $img_path) {
-                    // แปลง relative path เป็น absolute path
-                    $full_path = __DIR__ . '/../uploads/job_photos/' . $img_path;
-
-                    if (file_exists($full_path)) {
-                        try {
-                            $section->addImage($full_path, [
-                                'width' => 400,
-                                'height' => 300,
-                                'wrappingStyle' => 'inline'
-                            ]);
-                            $section->addTextBreak(1);
-                            $img_count++;
-
-                            // จำกัดไม่เกิน 4 รูปต่อเอกสาร
-                            if ($img_count >= 4)
-                                break;
-                        } catch (Exception $e) {
-                            error_log("Failed to add image: " . $e->getMessage());
-                        }
-                    }
-                }
-            }
-        }
+        // แถว 6: หมายเหตุ (inline)
+        addLineStyled($section, [
+            ['label' => 'หมายเหตุ:', 'value' => $job['note'] ?? '-'],
+        ]);
 
         // === GPS ===
         if (!empty($job['gps'])) {
-            $section->addTextBreak(1);
             addLineStyled($section, [
                 ['label' => 'พิกัด GPS:', 'value' => $job['gps']],
             ]);
+        }
+
+        // === รูปภาพ (3 คอลัมน์ต่อแถว) ===
+        if (!empty($job['images'])) {
+            $section->addText('รูปภาพประกอบ:', $label14, $centered);
+
+            $images_array = json_decode($job['images'], true);
+            if (is_array($images_array)) {
+                $img_table = $section->addTable([
+                    'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER,
+                    'cellSpacing' => 50,
+                ]);
+                $img_count = 0;
+
+                foreach ($images_array as $img_path) {
+                    $full_path = __DIR__ . '/../uploads/job_photos/' . $img_path;
+                    if (!file_exists($full_path)) continue;
+
+                    try {
+                        if ($img_count % 3 === 0) {
+                            $img_table->addRow(2400);
+                        }
+                        $img_table->addCell(2800)->addImage($full_path, [
+                            'width'     => 175,
+                            'height'    => 131,
+                            'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,
+                        ]);
+                        $img_count++;
+
+                        if ($img_count >= 6) break;
+                    } catch (Exception $e) {
+                        error_log("Failed to add image: " . $e->getMessage());
+                    }
+                }
+
+                // เติม cell ว่างแถวสุดท้าย
+                $remainder = $img_count % 3;
+                if ($remainder !== 0) {
+                    for ($i = $remainder; $i < 3; $i++) {
+                        $img_table->addCell(2800);
+                    }
+                }
+            }
         }
 
         // บันทึก Word file
