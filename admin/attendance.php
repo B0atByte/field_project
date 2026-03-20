@@ -87,19 +87,27 @@ include '../components/header.php';
           </h1>
           <p class="text-sm text-gray-500 mt-1">ดูเวลาเข้า-ออกงานของพนักงานภาคสนาม</p>
         </div>
+        <!-- Export Button -->
+        <div class="flex items-center gap-2">
+          <a id="exportBtn"
+             href="export_attendance.php?date=<?= urlencode($filter_date) ?>&user_id=<?= $filter_user ?>"
+             class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition shadow-sm">
+            <i class="fas fa-file-excel"></i> Export Excel
+          </a>
+        </div>
       </div>
 
       <!-- Filter -->
       <div class="bg-white rounded-2xl border border-gray-200 p-5 mb-6 shadow-sm">
-        <form method="GET" class="flex flex-wrap items-end gap-4">
+        <form method="GET" id="filterForm" class="flex flex-wrap items-end gap-4">
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">วันที่</label>
-            <input type="date" name="date" value="<?= htmlspecialchars($filter_date) ?>"
+            <input type="date" name="date" id="fDate" value="<?= htmlspecialchars($filter_date) ?>"
               class="border border-gray-300 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
           </div>
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">พนักงาน</label>
-            <select name="user_id" class="border border-gray-300 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none min-w-[160px]">
+            <select name="user_id" id="fUser" class="border border-gray-300 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none min-w-[160px]">
               <option value="0">ทุกคน</option>
               <?php foreach ($field_users as $u): ?>
                 <option value="<?= $u['id'] ?>" <?= $filter_user == $u['id'] ? 'selected' : '' ?>>
@@ -113,6 +121,26 @@ include '../components/header.php';
           </button>
           <a href="attendance.php" class="text-sm text-gray-500 hover:text-gray-700 underline">รีเซ็ต</a>
         </form>
+
+        <!-- Export Range -->
+        <div class="mt-4 pt-4 border-t border-gray-100">
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Export Excel ช่วงวันที่</p>
+          <div class="flex flex-wrap items-end gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">ตั้งแต่วันที่</label>
+              <input type="date" id="expFrom" value="<?= htmlspecialchars($filter_date) ?>"
+                class="border border-gray-300 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-green-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">ถึงวันที่</label>
+              <input type="date" id="expTo" value="<?= htmlspecialchars($filter_date) ?>"
+                class="border border-gray-300 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-green-500">
+            </div>
+            <button onclick="doExport()" class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-5 py-2 rounded-xl transition shadow-sm">
+              <i class="fas fa-file-excel"></i> Download Excel
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Summary Cards -->
@@ -301,5 +329,32 @@ include '../components/header.php';
     </div>
   </main>
 </div>
+
+<script>
+  function doExport() {
+    const from = document.getElementById('expFrom').value;
+    const to   = document.getElementById('expTo').value;
+    const user = document.getElementById('fUser').value;
+    if (!from || !to) { alert('กรุณาระบุช่วงวันที่'); return; }
+    if (from > to) { alert('วันเริ่มต้นต้องไม่มากกว่าวันสิ้นสุด'); return; }
+    const params = new URLSearchParams({ date_from: from, date_to: to, user_id: user, range: '1' });
+    window.location.href = 'export_attendance.php?' + params.toString();
+  }
+
+  // Sync export header button with filter date
+  document.getElementById('exportBtn').addEventListener('click', function(e) {
+    e.preventDefault();
+    const date = document.getElementById('fDate').value;
+    const user = document.getElementById('fUser').value;
+    const params = new URLSearchParams({ date_from: date, date_to: date, user_id: user, range: '1' });
+    window.location.href = 'export_attendance.php?' + params.toString();
+  });
+
+  // Auto-set export range to match current filter date
+  document.getElementById('fDate').addEventListener('change', function() {
+    document.getElementById('expFrom').value = this.value;
+    document.getElementById('expTo').value   = this.value;
+  });
+</script>
 
 <?php include '../components/footer.php'; ?>
