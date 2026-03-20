@@ -12,28 +12,47 @@ require_once __DIR__ . '/../../config/db.php';
 
 $userId = (int)$_SESSION['user']['id'];
 
-// ดึง record ล่าสุดของวันนี้
+// ดึง session ล่าสุดของวันนี้
 $stmt = $conn->prepare("
-    SELECT type, latitude, longitude, address, checked_at
+    SELECT checkin_at, checkout_at,
+           checkin_lat, checkin_lng, checkin_address,
+           checkout_lat, checkout_lng, checkout_address
     FROM work_checkins
-    WHERE user_id = ? AND DATE(checked_at) = CURDATE()
-    ORDER BY checked_at DESC LIMIT 1
+    WHERE user_id = ? AND DATE(checkin_at) = CURDATE()
+    ORDER BY checkin_at DESC LIMIT 1
 ");
 $stmt->bind_param('i', $userId);
 $stmt->execute();
-$latest = $stmt->get_result()->fetch_assoc();
+$session = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-// ดึง checkin แรกของวันนี้
-$stmt = $conn->prepare("
-    SELECT checked_at FROM work_checkins
-    WHERE user_id = ? AND type = 'checkin' AND DATE(checked_at) = CURDATE()
-    ORDER BY checked_at ASC LIMIT 1
-");
-$stmt->bind_param('i', $userId);
-$stmt->execute();
-$firstCheckin = $stmt->get_result()->fetch_assoc();
-$stmt->close();
+$latest      = null;
+$firstCheckin = null;
+
+if ($session) {
+    $isOpen = ($session['checkout_at'] === null);
+
+    // แปลงเป็น format เดิมที่ frontend ใช้
+    $latest = [
+        'type'       => $isOpen ? 'checkin' : 'checkout',
+        'checked_at' => $isOpen ? $session['checkin_at'] : $session['checkout_at'],
+        'latitude'   => $isOpen ? $session['checkin_lat']  : $session['checkout_lat'],
+        'longitude'  => $isOpen ? $session['checkin_lng']  : $session['checkout_lng'],
+        'address'    => $isOpen ? $session['checkin_address'] : $session['checkout_address'],
+    ];
+
+    // ดึง checkin แรกของวันนี้ (สำหรับคำนวณเวลาทำงานสะสม)
+    $stmt2 = $conn->prepare("
+        SELECT checkin_at AS checked_at
+        FROM work_checkins
+        WHERE user_id = ? AND DATE(checkin_at) = CURDATE()
+        ORDER BY checkin_at ASC LIMIT 1
+    ");
+    $stmt2->bind_param('i', $userId);
+    $stmt2->execute();
+    $firstCheckin = $stmt2->get_result()->fetch_assoc();
+    $stmt2->close();
+}
 
 echo json_encode([
     'success'       => true,

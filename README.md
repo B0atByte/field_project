@@ -118,6 +118,13 @@ field_project/
 
 ## Changelog
 
+### v3.3 (2026-03-20)
+- เปลี่ยน schema `work_checkins`: จาก 1 event = 1 row เป็น **1 session = 1 row** (checkin_at + checkout_at ในแถวเดียว)
+- Check-in สร้าง row ใหม่, Check-out UPDATE row เดิม — ป้องกัน checkin ซ้ำถ้ายังไม่ได้ checkout
+- อัปเดต `checkin.php`, `checkin_status.php`, `attendance.php`, `export_attendance.php` ให้ใช้ schema ใหม่
+- ลบ Timeline section ที่ซ้ำซ้อนออกจาก attendance.php
+- เพิ่ม `SQL/migrate_work_checkins_v2.sql` สำหรับ migrate ข้อมูลเดิม
+
 ### v3.2 (2026-03-20)
 - แก้ layout `admin/logs.php` และ `admin/admin_delete_jobs.php` — ใช้ `header.php`/`footer.php` ถูกต้อง ไม่มี duplicate DOCTYPE, sidebar ไม่ทับ content
 - เพิ่ม SweetAlert2 + AJAX submit ใน `dashboard/view_job.php` — confirm → loading → success/error แทนหน้าขาว

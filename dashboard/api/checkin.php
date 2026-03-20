@@ -18,10 +18,10 @@ if (!validateCsrfToken($token)) {
     exit;
 }
 
-$input = json_decode(file_get_contents('php://input'), true);
-$type    = $input['type']      ?? '';
-$lat     = isset($input['lat'])  ? (float)$input['lat']  : null;
-$lng     = isset($input['lng'])  ? (float)$input['lng']  : null;
+$input   = json_decode(file_get_contents('php://input'), true);
+$type    = $input['type']    ?? '';
+$lat     = isset($input['lat'])     ? (float)$input['lat']     : null;
+$lng     = isset($input['lng'])     ? (float)$input['lng']     : null;
 $address = isset($input['address']) ? trim(substr($input['address'], 0, 500)) : null;
 $note    = isset($input['note'])    ? trim(substr($input['note'], 0, 500))    : null;
 
@@ -32,68 +32,76 @@ if (!in_array($type, ['checkin', 'checkout'], true)) {
 
 $userId = (int)$_SESSION['user']['id'];
 
-// ถ้า checkout ต้องมี checkin ก่อน (วันนี้)
-if ($type === 'checkout') {
+// --- ค้นหา session ที่ยังเปิดอยู่วันนี้ (checkin แต่ยังไม่ checkout) ---
+$stmt = $conn->prepare("
+    SELECT id FROM work_checkins
+    WHERE user_id = ? AND DATE(checkin_at) = CURDATE() AND checkout_at IS NULL
+    ORDER BY checkin_at DESC LIMIT 1
+");
+$stmt->bind_param('i', $userId);
+$stmt->execute();
+$openSession = $stmt->get_result()->fetch_assoc();
+$stmt->close();
+
+if ($type === 'checkin') {
+    // ห้าม checkin ซ้ำถ้ายังมี session ที่ยังไม่ได้ checkout
+    if ($openSession) {
+        echo json_encode(['success' => false, 'message' => 'ลงเวลาเข้างานไปแล้ว กรุณาลงเวลาออกงานก่อน']);
+        exit;
+    }
+    // สร้าง session ใหม่
     $stmt = $conn->prepare("
-        SELECT id FROM work_checkins
-        WHERE user_id = ? AND type = 'checkin'
-          AND DATE(checked_at) = CURDATE()
-        ORDER BY checked_at DESC LIMIT 1
+        INSERT INTO work_checkins (user_id, checkin_at, checkin_lat, checkin_lng, checkin_address, note)
+        VALUES (?, NOW(), ?, ?, ?, ?)
     ");
-    $stmt->bind_param('i', $userId);
-    $stmt->execute();
-    if ($stmt->get_result()->num_rows === 0) {
+    $stmt->bind_param('iddss', $userId, $lat, $lng, $address, $note);
+    if (!$stmt->execute()) {
+        echo json_encode(['success' => false, 'message' => 'บันทึกข้อมูลไม่สำเร็จ']);
+        exit;
+    }
+    $stmt->close();
+
+} else {
+    // checkout: ต้องมี session ที่เปิดอยู่
+    if (!$openSession) {
         echo json_encode(['success' => false, 'message' => 'ยังไม่ได้ลงเวลาเข้างานวันนี้']);
         exit;
     }
-    $stmt->close();
-}
-
-// ป้องกัน checkin ซ้ำภายใน 1 ชม.
-if ($type === 'checkin') {
+    $sessionId = (int)$openSession['id'];
     $stmt = $conn->prepare("
-        SELECT id FROM work_checkins
-        WHERE user_id = ? AND type = 'checkin'
-          AND checked_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)
-        ORDER BY checked_at DESC LIMIT 1
+        UPDATE work_checkins
+           SET checkout_at = NOW(), checkout_lat = ?, checkout_lng = ?, checkout_address = ?
+         WHERE id = ?
     ");
-    $stmt->bind_param('i', $userId);
-    $stmt->execute();
-    if ($stmt->get_result()->num_rows > 0) {
-        echo json_encode(['success' => false, 'message' => 'ลงเวลาเข้างานไปแล้วในช่วง 1 ชั่วโมงที่ผ่านมา']);
+    $stmt->bind_param('ddsi', $lat, $lng, $address, $sessionId);
+    if (!$stmt->execute()) {
+        echo json_encode(['success' => false, 'message' => 'บันทึกข้อมูลไม่สำเร็จ']);
         exit;
     }
     $stmt->close();
 }
 
+// --- ดึง session ล่าสุดของวันนี้กลับมา ---
 $stmt = $conn->prepare("
-    INSERT INTO work_checkins (user_id, type, latitude, longitude, address, note)
-    VALUES (?, ?, ?, ?, ?, ?)
-");
-$stmt->bind_param('isddss', $userId, $type, $lat, $lng, $address, $note);
-
-if (!$stmt->execute()) {
-    echo json_encode(['success' => false, 'message' => 'บันทึกข้อมูลไม่สำเร็จ']);
-    exit;
-}
-$stmt->close();
-
-// ดึง record ล่าสุดกลับมา
-$stmt = $conn->prepare("
-    SELECT id, type, latitude, longitude, address, checked_at
+    SELECT checkin_at, checkout_at,
+           checkin_lat, checkin_lng, checkin_address,
+           checkout_lat, checkout_lng, checkout_address
     FROM work_checkins
-    WHERE user_id = ? ORDER BY checked_at DESC LIMIT 1
+    WHERE user_id = ? AND DATE(checkin_at) = CURDATE()
+    ORDER BY checkin_at DESC LIMIT 1
 ");
 $stmt->bind_param('i', $userId);
 $stmt->execute();
 $record = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
+$isCheckedIn = ($record && $record['checkout_at'] === null);
+
 echo json_encode([
     'success'    => true,
     'type'       => $type,
     'message'    => $type === 'checkin' ? 'ลงเวลาเข้างานสำเร็จ' : 'ลงเวลาออกงานสำเร็จ',
-    'checked_at' => $record['checked_at'],
-    'lat'        => $record['latitude'],
-    'lng'        => $record['longitude'],
+    'checked_at' => $isCheckedIn ? $record['checkin_at'] : ($record['checkout_at'] ?? null),
+    'lat'        => $isCheckedIn ? $record['checkin_lat'] : ($record['checkout_lat'] ?? null),
+    'lng'        => $isCheckedIn ? $record['checkin_lng'] : ($record['checkout_lng'] ?? null),
 ]);

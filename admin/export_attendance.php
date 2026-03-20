@@ -30,7 +30,7 @@ if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_to))   $date_to   = date('Y-m-d')
 if ($date_from > $date_to) [$date_from, $date_to] = [$date_to, $date_from];
 
 // Build query
-$where  = ['DATE(wc.checked_at) BETWEEN ? AND ?'];
+$where  = ['DATE(wc.checkin_at) BETWEEN ? AND ?'];
 $params = [$date_from, $date_to];
 $types  = 'ss';
 
@@ -40,27 +40,24 @@ if ($filter_user > 0) {
     $types   .= 'i';
 }
 
-// Summary rows: one row per user per day
+// Summary rows: one row per session (1 session = 1 checkin/checkout pair)
 $sql = "
     SELECT
-        DATE(wc.checked_at)                                             AS work_date,
-        u.id                                                            AS user_id,
-        u.name                                                          AS user_name,
-        MIN(CASE WHEN wc.type='checkin'  THEN wc.checked_at END)       AS first_checkin,
-        MAX(CASE WHEN wc.type='checkout' THEN wc.checked_at END)       AS last_checkout,
-        SUM(wc.type='checkin')                                          AS checkin_count,
-        SUM(wc.type='checkout')                                         AS checkout_count,
-        MIN(CASE WHEN wc.type='checkin'  THEN wc.latitude  END)        AS in_lat,
-        MIN(CASE WHEN wc.type='checkin'  THEN wc.longitude END)        AS in_lng,
-        MIN(CASE WHEN wc.type='checkin'  THEN wc.address   END)        AS in_address,
-        MAX(CASE WHEN wc.type='checkout' THEN wc.latitude  END)        AS out_lat,
-        MAX(CASE WHEN wc.type='checkout' THEN wc.longitude END)        AS out_lng,
-        MAX(CASE WHEN wc.type='checkout' THEN wc.address   END)        AS out_address
+        DATE(wc.checkin_at)   AS work_date,
+        u.id                  AS user_id,
+        u.name                AS user_name,
+        wc.checkin_at         AS first_checkin,
+        wc.checkout_at        AS last_checkout,
+        wc.checkin_lat        AS in_lat,
+        wc.checkin_lng        AS in_lng,
+        wc.checkin_address    AS in_address,
+        wc.checkout_lat       AS out_lat,
+        wc.checkout_lng       AS out_lng,
+        wc.checkout_address   AS out_address
     FROM work_checkins wc
     JOIN users u ON wc.user_id = u.id
     WHERE " . implode(' AND ', $where) . "
-    GROUP BY DATE(wc.checked_at), u.id, u.name
-    ORDER BY work_date ASC, u.name ASC
+    ORDER BY work_date ASC, wc.checkin_at ASC
 ";
 
 $stmt = $conn->prepare($sql);
@@ -163,12 +160,12 @@ $sheet2->setTitle('สรุปรายคน');
 // Get all field users and their stats for the period
 $sql2 = "
     SELECT
-        u.name                                                        AS user_name,
-        COUNT(DISTINCT DATE(wc.checked_at))                          AS days_present,
-        SUM(wc.type='checkin')                                        AS total_checkins,
-        SUM(wc.type='checkout')                                       AS total_checkouts,
-        MIN(wc.checked_at)                                            AS earliest_checkin,
-        MAX(CASE WHEN wc.type='checkout' THEN wc.checked_at END)     AS latest_checkout
+        u.name                                  AS user_name,
+        COUNT(DISTINCT DATE(wc.checkin_at))     AS days_present,
+        COUNT(*)                                AS total_checkins,
+        SUM(wc.checkout_at IS NOT NULL)         AS total_checkouts,
+        MIN(wc.checkin_at)                      AS earliest_checkin,
+        MAX(wc.checkout_at)                     AS latest_checkout
     FROM work_checkins wc
     JOIN users u ON wc.user_id = u.id
     WHERE " . implode(' AND ', $where) . "
