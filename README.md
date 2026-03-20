@@ -1,5 +1,5 @@
 # Field Management System
-> ระบบบริหารจัดการงานภาคสนาม v3.1
+> ระบบบริหารจัดการงานภาคสนาม v3.2
 
 ระบบจัดการงานสำหรับทีมภาคสนาม รองรับการมอบหมายงาน ติดตามสถานะ บันทึกผล และสร้างรายงาน
 
@@ -117,6 +117,14 @@ field_project/
 ---
 
 ## Changelog
+
+### v3.2 (2026-03-20)
+- แก้ layout `admin/logs.php` และ `admin/admin_delete_jobs.php` — ใช้ `header.php`/`footer.php` ถูกต้อง ไม่มี duplicate DOCTYPE, sidebar ไม่ทับ content
+- เพิ่ม SweetAlert2 + AJAX submit ใน `dashboard/view_job.php` — confirm → loading → success/error แทนหน้าขาว
+- แก้ `dashboard/save_job.php` ให้ตอบกลับ JSON ทุก case (เพิ่ม `jsonDie()`, JSON-friendly CSRF check)
+- แก้ `admin/export_job_detail_word.php` — ลบ `ProofErr` class ที่ไม่มีใน PhpWord version ที่ติดตั้ง, เพิ่ม null guard สำหรับ `os`, `log_time`, `json_decode`, sanitize ชื่อไฟล์
+- แก้ `includes/ip_security.php` — เพิ่ม Docker bridge IP range `172.16.0.0/12` ใน localhost whitelist
+- แก้ `setup_ip_security.php` — เปลี่ยน font จาก Sarabun เป็น Prompt ให้ตรงกับ design system
 
 ### v3.1 (2026-03-17)
 - เพิ่มหน้า `setup_ip_security.php` — จัดการ IP Whitelist, Device Registration, Invite Link

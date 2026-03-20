@@ -106,54 +106,12 @@ $page_title = "ระบบจัดการ Logs";
 include '../components/header.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="th">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?= $page_title ?></title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            'thai': ['Prompt', 'sans-serif']
-          },
-          colors: {
-            'primary': '#dc2626',
-            'secondary': '#991b1b',
-            'surface': '#f8fafc'
-          },
-          animation: {
-            'fade-in': 'fadeIn 0.6s ease-out',
-            'slide-up': 'slideUp 0.5s ease-out'
-          },
-          keyframes: {
-            fadeIn: {
-              '0%': { opacity: '0', transform: 'translateY(20px)' },
-              '100%': { opacity: '1', transform: 'translateY(0)' }
-            },
-            slideUp: {
-              '0%': { opacity: '0', transform: 'translateY(30px)' },
-              '100%': { opacity: '1', transform: 'translateY(0)' }
-            }
-          }
-        }
-      }
-    }
-  </script>
-</head>
-<body class="font-thai bg-surface min-h-screen">
-
-<div class="flex min-h-screen bg-surface">
+<div class="flex h-screen overflow-hidden">
   <!-- Sidebar -->
   <?php include '../components/sidebar.php'; ?>
 
   <!-- Main Content -->
-  <div class="flex flex-col flex-1 ml-64">
+  <div class="flex flex-col flex-1 overflow-hidden md:ml-64">
     <!-- Header -->
     <header class="bg-white shadow-lg border-b border-red-100 sticky top-0 z-40">
       <div class="px-6 py-4">
@@ -405,5 +363,4 @@ window.addEventListener('popstate', function() {
 });
 </script>
 
-</body>
-</html>
+<?php include '../components/footer.php'; ?>

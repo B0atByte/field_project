@@ -34,8 +34,10 @@ function checkIpAccess($conn)
 
     $ip = getClientIp();
 
-    // 1. Always allow localhost (Loopback)
-    if ($ip === '127.0.0.1' || $ip === '::1') {
+    // 1. Always allow localhost (Loopback) and Docker host gateway
+    $localIps = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
+    // Allow Docker bridge/host gateway IPs (172.16.0.0/12 range)
+    if (in_array($ip, $localIps) || preg_match('/^172\.(1[6-9]|2[0-9]|3[0-1])\./', $ip)) {
         return true;
     }
 

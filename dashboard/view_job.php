@@ -959,10 +959,91 @@ $date_now = date("Y-m-d\TH:i");
     }
 
     function setupEventListeners() {
-      document.getElementById('jobForm').addEventListener('submit', function (e) {
+      document.getElementById('jobForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
         if (!validateForm()) {
-          e.preventDefault();
           showValidationErrors();
+          return;
+        }
+
+        // ยืนยันก่อนส่ง
+        const confirm = await Swal.fire({
+          title: 'ยืนยันการส่งงาน?',
+          text: 'หลังจากส่งแล้วจะไม่สามารถแก้ไขได้',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: 'ส่งงาน',
+          cancelButtonText: 'ยกเลิก',
+          confirmButtonColor: '#22c55e',
+          cancelButtonColor: '#6b7280',
+          reverseButtons: true
+        });
+
+        if (!confirm.isConfirmed) return;
+
+        // แสดง loading
+        Swal.fire({
+          title: 'กำลังบันทึก...',
+          text: 'กรุณารอสักครู่',
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          didOpen: () => { Swal.showLoading(); }
+        });
+
+        try {
+          const formData = new FormData(this);
+          const res = await fetch('save_job.php', {
+            method: 'POST',
+            body: formData
+          });
+
+          const text = await res.text();
+          let data;
+          try {
+            data = JSON.parse(text);
+          } catch {
+            Swal.fire({
+              title: 'เกิดข้อผิดพลาด',
+              text: 'เซิร์ฟเวอร์ตอบกลับผิดพลาด กรุณาลองใหม่',
+              icon: 'error',
+              footer: `<small style="word-break:break-all">${text.substring(0, 200)}</small>`,
+              confirmButtonText: 'ตกลง',
+              confirmButtonColor: '#ef4444'
+            });
+            return;
+          }
+
+          if (data.success) {
+            localStorage.removeItem(`job_draft_${<?= $job['id'] ?>}`);
+            await Swal.fire({
+              title: 'บันทึกสำเร็จ!',
+              text: 'ส่งผลการปฏิบัติงานเรียบร้อยแล้ว',
+              icon: 'success',
+              confirmButtonText: 'ตกลง',
+              confirmButtonColor: '#22c55e',
+              timer: 2500,
+              timerProgressBar: true
+            });
+            window.location.href = 'field.php';
+          } else {
+            Swal.fire({
+              title: 'เกิดข้อผิดพลาด',
+              text: data.message || 'ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่',
+              icon: 'error',
+              confirmButtonText: 'ตกลง',
+              confirmButtonColor: '#ef4444'
+            });
+          }
+        } catch (err) {
+          Swal.fire({
+            title: 'เกิดข้อผิดพลาด',
+            text: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่',
+            icon: 'error',
+            footer: `<small>${err.message}</small>`,
+            confirmButtonText: 'ตกลง',
+            confirmButtonColor: '#ef4444'
+          });
         }
       });
 
@@ -1664,9 +1745,6 @@ $date_now = date("Y-m-d\TH:i");
 
     document.addEventListener('DOMContentLoaded', loadDraft);
 
-    document.getElementById('jobForm')?.addEventListener('submit', function () {
-      localStorage.removeItem(`job_draft_${<?= $job['id'] ?>}`);
-    });
   </script>
 
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB3NfHFEyJb3yltga-dX0C23jsLEAQpORc&callback=initMap"

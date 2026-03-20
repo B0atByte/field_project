@@ -1,18 +1,32 @@
 <?php
+ini_set('display_errors', 0);
+header('Content-Type: application/json; charset=utf-8');
+
+function jsonDie($msg, $code = 400) {
+    http_response_code($code);
+    echo json_encode(['success' => false, 'message' => $msg], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 require_once __DIR__ . '/../includes/session_config.php';
 if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['role'], ['field', 'admin'])) {
-    die("Unauthorized");
+    jsonDie('ไม่มีสิทธิ์เข้าถึง', 403);
 }
 
 include '../config/db.php';
 require_once '../includes/csrf.php';
-requireCsrfToken();
+
+// ตรวจ CSRF แบบ JSON-friendly
+$csrfToken = $_POST['csrf_token'] ?? '';
+if (!verifyCsrfToken($csrfToken)) {
+    jsonDie('Token หมดอายุ กรุณารีเฟรชหน้าแล้วลองใหม่', 403);
+}
 
 // ---- Input & basic sanitize ----
 $user_id = (int)($_SESSION['user']['id'] ?? 0);
 $job_id  = (int)($_POST['job_id'] ?? 0);
 if ($user_id <= 0 || $job_id <= 0) {
-    die("Invalid data");
+    jsonDie('ข้อมูลไม่ถูกต้อง');
 }
 
 $result   = trim($_POST['result'] ?? 'ไม่ระบุ');
@@ -132,10 +146,11 @@ function sendToDiscord($job, $note, $gps, $images, $result) {
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 3); // ไม่ให้รอ Discord นานเกิน 3 วินาที
     curl_exec($ch);
     curl_close($ch);
 }
 sendToDiscord($job, $note, $gps, $images, $result);
 
-// ---- Redirect ----
-echo "<script>window.location.href='field.php';</script>";
+// ---- Return JSON ----
+echo json_encode(['success' => true, 'message' => 'บันทึกผลการปฏิบัติงานสำเร็จ'], JSON_UNESCAPED_UNICODE);

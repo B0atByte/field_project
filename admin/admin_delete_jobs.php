@@ -134,56 +134,26 @@ if ($selected_user && $date_from && $date_to) {
     }
     $stmt->close();
 }
+
+$page_title = "ค้นหาและลบงานภาคสนาม";
+include '../components/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <?php include('../components/header.php'); ?>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ลบงานภาคสนามตามเงื่อนไข</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-in-out',
-                        'slide-up': 'slideUp 0.3s ease-out'
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
-</head>
-<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
 
-<?php include('../components/sidebar.php'); ?>
+<div class="flex h-screen overflow-hidden">
+  <?php include '../components/sidebar.php'; ?>
 
-<div class="ml-0 md:ml-64 p-4 sm:p-6 lg:p-8">
-    <!-- Header Section -->
-    <div class="mb-8 animate-fade-in">
-        <div class="flex items-center space-x-3 mb-2">
-            <div class="bg-red-100 p-3 rounded-xl">
-                <i class="fas fa-search text-red-600 text-xl"></i>
-            </div>
-            <div>
-                <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">ค้นหาและลบงานภาคสนาม</h1>
-                <p class="text-gray-600 mt-1">จัดการข้อมูลงานภาคสนามด้วยระบบค้นหาและลบที่ปลอดภัย</p>
-            </div>
-        </div>
-    </div>
+  <div class="flex flex-col flex-1 overflow-hidden md:ml-64">
+    <header class="bg-white shadow border-b border-gray-200 px-6 py-4 flex items-center gap-3 flex-shrink-0">
+      <div class="bg-red-100 p-2 rounded-xl">
+        <i class="fas fa-search text-red-600 text-lg"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-bold text-gray-800">ค้นหาและลบงานภาคสนาม</h1>
+        <p class="text-sm text-gray-500">จัดการข้อมูลงานภาคสนามด้วยระบบค้นหาและลบที่ปลอดภัย</p>
+      </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-6 space-y-6">
 
     <!-- Search Form -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-200 mb-8 animate-slide-up">
@@ -418,6 +388,9 @@ if ($selected_user && $date_from && $date_to) {
         </div>
         <?php unset($_SESSION['deleted']); ?>
     <?php endif; ?>
+
+    </main>
+  </div>
 </div>
 
 <script>
@@ -451,5 +424,4 @@ style.textContent = `
 document.head.appendChild(style);
 </script>
 
-</body>
-</html>
+<?php include '../components/footer.php'; ?>

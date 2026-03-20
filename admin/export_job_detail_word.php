@@ -59,7 +59,7 @@ if (!$job)
     die("ไม่พบข้อมูล");
 
 $phpWord = new PhpWord();
-$phpWord->getSettings()->setThemeFontLang(new \PhpOffice\PhpWord\ComplexType\ProofErr());
+// setThemeFontLang removed – ProofErr class not available in installed PhpWord version
 $section = $phpWord->addSection([
     'marginTop'    => 720,   // 0.5 นิ้ว
     'marginBottom' => 720,
@@ -96,7 +96,7 @@ addLineStyled($section, [
 ]);
 
 // แถว 2: ค้างชำระ
-$os_clean = str_replace(',', '', $job['os']);
+$os_clean = str_replace(',', '', $job['os'] ?? '0');
 $os_text = number_format(floatval($os_clean), 2) . ' บาท';
 addLineStyled($section, [
     ['label' => 'ค้างชำระปัจจุบัน:', 'value' => 'OutStanding : ' . $os_text],
@@ -105,7 +105,7 @@ addLineStyled($section, [
 // แถว 3: ทีม | วันที่ลงพื้นที่
 addLineStyled($section, [
     ['label' => 'ทีม:', 'value' => 'บ.บาร์เกน พ้อยท์ จำกัด'],
-    ['label' => 'วันที่ลงพื้นที่:', 'value' => date('j/n/Y', strtotime($job['log_time']))],
+    ['label' => 'วันที่ลงพื้นที่:', 'value' => $job['log_time'] ? date('j/n/Y', strtotime($job['log_time'])) : '-'],
 ]);
 
 // แถว 4: สถานที่ลง
@@ -132,7 +132,7 @@ addLineStyled($section, [
 if (!empty($job['images'])) {
     $section->addText('รูปภาพประกอบ', $label14, $centered);
 
-    $images = json_decode($job['images'], true);
+    $images = json_decode($job['images'], true) ?? [];
     require_once __DIR__ . '/../includes/image_optimizer.php';
 
     $table = $section->addTable([
@@ -167,7 +167,8 @@ if (!empty($job['images'])) {
 
 // === OUTPUT ===
 header("Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-header('Content-Disposition: attachment; filename="job_' . $job['contract_number'] . '.docx"');
+$safeFilename = preg_replace('/[\/\\\\:*?"<>|]/', '_', $job['contract_number'] ?? 'job');
+header('Content-Disposition: attachment; filename="job_' . $safeFilename . '.docx"');
 
 $objWriter = IOFactory::createWriter($phpWord, 'Word2007');
 $objWriter->save("php://output");
