@@ -7,9 +7,9 @@ include '../config/db.php';
 // Filters
 $filter_date  = $_GET['date']    ?? date('Y-m-d');
 $filter_user  = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
-$per_page     = in_array((int)($_GET['per_page'] ?? 25), [10, 25, 50, 100]) ? (int)$_GET['per_page'] : 25;
+$per_page     = in_array((int)($_GET['per_page'] ?? 25), [10, 25, 50, 100]) ? (int)($_GET['per_page'] ?? 25) : 25;
 $page         = max(1, (int)($_GET['page'] ?? 1));
-$timeline_per = in_array((int)($_GET['tl_per'] ?? 20), [10, 20, 50, 100]) ? (int)$_GET['tl_per'] : 20;
+$timeline_per = in_array((int)($_GET['tl_per'] ?? 20), [10, 20, 50, 100]) ? (int)($_GET['tl_per'] ?? 20) : 20;
 $timeline_page= max(1, (int)($_GET['tl_page'] ?? 1));
 
 // Validate date
