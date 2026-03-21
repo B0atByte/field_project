@@ -24,6 +24,10 @@ composer.phar
 # OS
 .DS_Store
 Thumbs.db
+nul
+
+# SSL Certificates (private keys)
+/certs/
 
 # Logs
 *.log
