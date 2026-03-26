@@ -30,7 +30,6 @@ function getAllPermissions(): array {
         'export' => [
             'action_export_excel' => 'Export Excel',
             'action_export_word'  => 'Export Word',
-            'action_export_pdf'   => 'Export PDF',
         ],
         'manage' => [
             'action_import_jobs'  => 'นำเข้างานจาก Excel',
