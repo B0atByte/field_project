@@ -289,11 +289,12 @@ include '../components/header.php';
                     
                     <form id="deleteForm" method="POST" onsubmit="return confirmDelete()" class="flex-shrink-0">
                         <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
+                        <input type="hidden" name="delete_filter" value="1">
                         <input type="hidden" name="user_id" value="<?= $selected_user ?>">
                         <input type="hidden" name="status" value="<?= $status_filter ?>">
                         <input type="hidden" name="date_from" value="<?= $date_from ?>">
                         <input type="hidden" name="date_to" value="<?= $date_to ?>">
-                        <button name="delete_filter" type="submit"
+                        <button type="submit"
                                 class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-6 py-3 rounded-xl font-medium transition duration-200 transform hover:scale-105 shadow-lg">
                             <i class="fas fa-trash-alt mr-2"></i>
                             ลบงานทั้งหมด (<?= $total ?> รายการ)
