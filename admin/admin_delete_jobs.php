@@ -1,20 +1,13 @@
 <?php
 require_once __DIR__ . '/../includes/session_config.php';
 require_once __DIR__ . '/../includes/permissions.php';
+require_once __DIR__ . '/../includes/csrf.php';
 include('../config/db.php');
-
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 
 // ตรวจสอบสิทธิ์
 requirePermission('action_delete_jobs_bulk');
 
-// CSRF
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-
-$csrf_token = $_SESSION['csrf_token'];
+$csrf_token = getCsrfToken();
 $user_id = $_SESSION['user']['id'];
 
 // ดึงรายชื่อพนักงาน field
@@ -34,7 +27,7 @@ $date_from = $_GET['date_from'] ?? '';
 $date_to = $_GET['date_to'] ?? '';
 
 // ลบงาน
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_filter']) && $_POST['csrf_token'] === $_SESSION['csrf_token']) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_filter']) && verifyCsrfToken($_POST['csrf_token'] ?? '')) {
     $del_user = (int)$_POST['user_id'];
     $del_status = $_POST['status'];
     $del_date_from = $_POST['date_from'];
