@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_filter']) && $
     $del_date_to = $_POST['date_to'];
 
     // ดึงข้อมูลงานที่จะถูกลบก่อน เพื่อบันทึก log
-    $sql_select = "SELECT * FROM jobs WHERE assigned_to = ? AND created_at BETWEEN ? AND ?";
+    $sql_select = "SELECT * FROM jobs WHERE assigned_to = ? AND DATE(created_at) BETWEEN ? AND ?";
     $params_select = [$del_user, $del_date_from, $del_date_to];
 
     if ($del_status === 'completed') {
@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_filter']) && $
     $stmt_select->close();
 
     // ลบงานตามเงื่อนไข
-    $sql_delete = "DELETE FROM jobs WHERE assigned_to = ? AND created_at BETWEEN ? AND ?";
+    $sql_delete = "DELETE FROM jobs WHERE assigned_to = ? AND DATE(created_at) BETWEEN ? AND ?";
     $params_delete = [$del_user, $del_date_from, $del_date_to];
 
     if ($del_status === 'completed') {
@@ -113,7 +113,7 @@ $jobs = [];
 $total = $completed = $incomplete = 0;
 
 if ($selected_user && $date_from && $date_to) {
-    $sql = "SELECT * FROM jobs WHERE assigned_to = ? AND created_at BETWEEN ? AND ?";
+    $sql = "SELECT * FROM jobs WHERE assigned_to = ? AND DATE(created_at) BETWEEN ? AND ?";
     $params = [$selected_user, $date_from, $date_to];
 
     if ($status_filter === 'completed') {
@@ -202,7 +202,7 @@ include '../components/header.php';
                         <i class="fas fa-calendar-alt mr-1 text-purple-500"></i>
                         วันที่เริ่มต้น
                     </label>
-                    <input type="date" name="date_from" value="<?= $date_from ?>" 
+                    <input type="date" id="date_from" name="date_from" value="<?= $date_from ?>"
                            class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200">
                 </div>
 
@@ -212,9 +212,20 @@ include '../components/header.php';
                         <i class="fas fa-calendar-alt mr-1 text-purple-500"></i>
                         วันที่สิ้นสุด
                     </label>
-                    <input type="date" name="date_to" value="<?= $date_to ?>" 
+                    <input type="date" id="date_to" name="date_to" value="<?= $date_to ?>"
                            class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200">
                 </div>
+            </div>
+
+            <!-- Quick Date Shortcuts -->
+            <div class="flex flex-wrap gap-2 mb-4">
+                <span class="text-sm text-gray-500 self-center mr-1"><i class="fas fa-bolt text-yellow-400"></i> เลือกเร็ว:</span>
+                <button type="button" onclick="setDateRange('today')"   class="px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition">วันนี้</button>
+                <button type="button" onclick="setDateRange('yesterday')" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition">เมื่อวาน</button>
+                <button type="button" onclick="setDateRange('this_week')" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition">สัปดาห์นี้</button>
+                <button type="button" onclick="setDateRange('last_week')" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition">สัปดาห์ที่แล้ว</button>
+                <button type="button" onclick="setDateRange('this_month')" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 transition">เดือนนี้</button>
+                <button type="button" onclick="setDateRange('last_month')" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 transition">เดือนที่แล้ว</button>
             </div>
 
             <div class="flex justify-end">
@@ -283,7 +294,7 @@ include '../components/header.php';
                         </div>
                     </div>
                     
-                    <form method="POST" onsubmit="return confirmDelete()" class="flex-shrink-0">
+                    <form id="deleteForm" method="POST" onsubmit="return confirmDelete()" class="flex-shrink-0">
                         <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
                         <input type="hidden" name="user_id" value="<?= $selected_user ?>">
                         <input type="hidden" name="status" value="<?= $status_filter ?>">
@@ -311,36 +322,42 @@ include '../components/header.php';
                     <table class="w-full">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รหัสงาน</th>
-                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่องาน</th>
-                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
-                                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่สร้าง</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เลขที่สัญญา</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สินค้า</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลูกค้า / พื้นที่</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่สร้าง</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             <?php foreach ($jobs as $index => $job): ?>
-                                <tr class="hover:bg-gray-50 transition duration-150 <?= $index % 2 === 0 ? 'bg-white' : 'bg-gray-25' ?>">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="text-sm font-medium text-gray-900">#<?= $job['id'] ?></span>
+                                <tr class="hover:bg-blue-50 transition duration-150 <?= $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' ?>">
+                                    <td class="px-4 py-3 text-sm text-gray-400"><?= $index + 1 ?></td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm font-mono font-semibold text-indigo-700"><?= htmlspecialchars($job['contract_number']) ?></span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900 font-medium"><?= htmlspecialchars($job['product']) ?></div>
+                                    <td class="px-4 py-3">
+                                        <div class="text-sm font-medium text-gray-900"><?= htmlspecialchars($job['product']) ?></div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-4 py-3 max-w-xs">
+                                        <div class="text-sm text-gray-700 truncate"><?= htmlspecialchars($job['location_info'] ?? '-') ?></div>
+                                        <?php if (!empty($job['province'])): ?>
+                                            <div class="text-xs text-gray-400"><i class="fas fa-map-marker-alt mr-1"></i><?= htmlspecialchars($job['province']) ?></div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
                                         <?php if ($job['status'] === 'completed'): ?>
-                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                <i class="fas fa-check-circle mr-1"></i>
-                                                ส่งแล้ว
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                <i class="fas fa-check-circle mr-1"></i>ส่งแล้ว
                                             </span>
                                         <?php else: ?>
-                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                                <i class="fas fa-clock mr-1"></i>
-                                                ยังไม่ส่ง
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                                <i class="fas fa-clock mr-1"></i>ยังไม่ส่ง
                                             </span>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <i class="fas fa-calendar mr-1"></i>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                                         <?= date('d/m/Y H:i', strtotime($job['created_at'])) ?>
                                     </td>
                                 </tr>
@@ -393,35 +410,75 @@ include '../components/header.php';
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 function confirmDelete() {
-    return confirm('คำเตือน!\n\nคุณแน่ใจหรือไม่ที่ต้องการลบงานทั้งหมดตามเงื่อนไขนี้?\nการลบข้อมูลจะไม่สามารถกู้คืนได้\n\nกดตกลงเพื่อดำเนินการต่อ');
+    const total = <?= $total ?? 0 ?>;
+    Swal.fire({
+        title: 'ยืนยันการลบ?',
+        html: `คุณกำลังจะลบงาน <strong>${total} รายการ</strong><br><span class="text-sm text-gray-500">การดำเนินการนี้ไม่สามารถกู้คืนได้</span>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: '<i class="fas fa-trash-alt mr-1"></i> ลบทันที',
+        cancelButtonText: 'ยกเลิก',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('deleteForm').submit();
+        }
+    });
+    return false;
 }
 
 function closeAlert() {
     document.getElementById('success-alert').style.display = 'none';
 }
 
-// Auto close success alert after 5 seconds
+// Auto close success alert
 setTimeout(() => {
-    const alert = document.getElementById('success-alert');
-    if (alert) {
-        alert.style.animation = 'fadeOut 0.5s ease-in-out';
-        setTimeout(() => {
-            alert.style.display = 'none';
-        }, 500);
-    }
+    const el = document.getElementById('success-alert');
+    if (el) el.style.display = 'none';
 }, 5000);
 
-// Add fadeOut animation
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes fadeOut {
-        from { opacity: 1; transform: translateY(0); }
-        to { opacity: 0; transform: translateY(20px); }
+// Quick date range shortcuts
+function setDateRange(range) {
+    const today = new Date();
+    let from, to;
+
+    const fmt = d => d.toISOString().split('T')[0];
+
+    if (range === 'today') {
+        from = to = fmt(today);
+    } else if (range === 'yesterday') {
+        const d = new Date(today); d.setDate(d.getDate() - 1);
+        from = to = fmt(d);
+    } else if (range === 'this_week') {
+        const d = new Date(today);
+        const day = d.getDay() || 7;
+        d.setDate(d.getDate() - day + 1);
+        from = fmt(d);
+        to = fmt(today);
+    } else if (range === 'last_week') {
+        const d = new Date(today);
+        const day = d.getDay() || 7;
+        d.setDate(d.getDate() - day - 6);
+        from = fmt(d);
+        const e = new Date(d); e.setDate(e.getDate() + 6);
+        to = fmt(e);
+    } else if (range === 'this_month') {
+        from = fmt(new Date(today.getFullYear(), today.getMonth(), 1));
+        to = fmt(today);
+    } else if (range === 'last_month') {
+        const f = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        const t = new Date(today.getFullYear(), today.getMonth(), 0);
+        from = fmt(f); to = fmt(t);
     }
-`;
-document.head.appendChild(style);
+
+    document.getElementById('date_from').value = from;
+    document.getElementById('date_to').value = to;
+}
 </script>
 
 <?php include '../components/footer.php'; ?>
