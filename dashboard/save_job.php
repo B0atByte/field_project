@@ -82,27 +82,65 @@ if (!empty($_FILES['images']['name'][0])) {
 }
 $img_json = json_encode($images, JSON_UNESCAPED_UNICODE);
 
-// ---- Insert job_logs (fix types: i i s s s s s) ----
-$stmt = $conn->prepare(
-    "INSERT INTO job_logs (job_id, user_id, result, note, gps, images, log_time)
-     VALUES (?, ?, ?, ?, ?, ?, ?)"
-);
-$stmt->bind_param("iisssss", $job_id, $user_id, $result, $note, $gps, $img_json, $log_time);
-$stmt->execute();
-$stmt->close();
+// ---- Begin transaction เพื่อป้องกันข้อมูลหายกลางทาง ----
+$conn->begin_transaction();
 
-// ---- Update job: mark completed (ตามเดิม) + ปิดการลบอัตโนมัติ ----
-// ถ้าอยากเปลี่ยนเป็น in_progress ให้แก้ 'completed' เป็น 'in_progress'
-$stmt = $conn->prepare(
-    "UPDATE jobs
-        SET status = 'completed',
-            auto_delete_at = NULL,
-            updated_at = NOW()
-      WHERE id = ?"
-);
-$stmt->bind_param("i", $job_id);
-$stmt->execute();
-$stmt->close();
+try {
+    // ตรวจว่างานยังอยู่และยัง pending อยู่ ก่อน insert
+    $stmtCheck = $conn->prepare("SELECT id FROM jobs WHERE id = ? AND status = 'pending' FOR UPDATE");
+    $stmtCheck->bind_param("i", $job_id);
+    $stmtCheck->execute();
+    $stmtCheck->store_result();
+    if ($stmtCheck->num_rows === 0) {
+        $stmtCheck->close();
+        $conn->rollback();
+        // ลบรูปที่อัปโหลดไปแล้วออก (ถ้ามี)
+        foreach ($images as $img) {
+            $basePath = __DIR__ . '/../uploads/job_photos/';
+            @unlink($basePath . $img);
+            @unlink($basePath . str_replace('/original/', '/thumbs/', $img));
+        }
+        jsonDie('ไม่พบงานนี้ในระบบ หรืองานถูกบันทึกไปแล้ว กรุณารีเฟรชหน้า', 404);
+    }
+    $stmtCheck->close();
+
+    // ---- Insert job_logs ----
+    $stmt = $conn->prepare(
+        "INSERT INTO job_logs (job_id, user_id, result, note, gps, images, log_time)
+         VALUES (?, ?, ?, ?, ?, ?, ?)"
+    );
+    $stmt->bind_param("iisssss", $job_id, $user_id, $result, $note, $gps, $img_json, $log_time);
+    if (!$stmt->execute()) {
+        throw new Exception('บันทึก job_logs ล้มเหลว: ' . $stmt->error);
+    }
+    $stmt->close();
+
+    // ---- Update job: mark completed + ปิดการลบอัตโนมัติ ----
+    $stmt = $conn->prepare(
+        "UPDATE jobs
+            SET status = 'completed',
+                auto_delete_at = NULL,
+                updated_at = NOW()
+          WHERE id = ?"
+    );
+    $stmt->bind_param("i", $job_id);
+    if (!$stmt->execute() || $conn->affected_rows === 0) {
+        throw new Exception('อัปเดตสถานะงานล้มเหลว');
+    }
+    $stmt->close();
+
+    $conn->commit();
+
+} catch (Exception $e) {
+    $conn->rollback();
+    // ลบรูปที่อัปโหลดไปแล้วออก (ถ้ามี) เพื่อไม่ให้ค้างในระบบ
+    foreach ($images as $img) {
+        $basePath = __DIR__ . '/../uploads/job_photos/';
+        @unlink($basePath . $img);
+        @unlink($basePath . str_replace('/original/', '/thumbs/', $img));
+    }
+    jsonDie('บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง', 500);
+}
 
 // ---- Fetch job for notification ----
 $job = ['contract_number' => '-', 'location_info' => '-', 'province' => '-'];

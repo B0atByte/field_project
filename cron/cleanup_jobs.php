@@ -6,14 +6,17 @@ date_default_timezone_set('Asia/Bangkok');
 require __DIR__ . '/../config/db.php';
 
 // 1. ดึงรายการงานที่ถึงกำหนดลบ
+// หมายเหตุ: เพิ่ม grace period 15 นาที เพื่อป้องกัน race condition
+// กรณีพนักงานกำลังส่งงานอยู่พอดีกับที่ cron รัน
 $sqlSelect = "
     SELECT j.id, j.contract_number
     FROM jobs j
     LEFT JOIN job_logs l ON l.job_id = j.id
     WHERE j.auto_delete_at IS NOT NULL
-      AND NOW() >= j.auto_delete_at
+      AND NOW() >= j.auto_delete_at + INTERVAL 15 MINUTE
       AND j.status = 'pending'
       AND l.id IS NULL
+      AND j.updated_at < NOW() - INTERVAL 15 MINUTE
 ";
 $result = $conn->query($sqlSelect);
 
