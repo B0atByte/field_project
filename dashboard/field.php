@@ -1750,6 +1750,25 @@ function buildUrl($params = [])
       }
 
       window.doCheckin = function(type) {
+        if (type === 'checkout') {
+          Swal.fire({
+            title: 'ยืนยันออกงาน?',
+            text: 'คุณต้องการลงเวลาออกงานใช่หรือไม่',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'ออกงาน',
+            cancelButtonText: 'ยกเลิก'
+          }).then((result) => {
+            if (result.isConfirmed) _doCheckinAction(type);
+          });
+          return;
+        }
+        _doCheckinAction(type);
+      };
+
+      function _doCheckinAction(type) {
         const btn = type === 'checkin' ? $('#btnCheckin') : $('#btnCheckout');
         btn.prop('disabled', true).find('span').text(type === 'checkin' ? 'กำลังลงเวลา...' : 'กำลังออก...');
 

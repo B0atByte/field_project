@@ -41,17 +41,8 @@ if ($session) {
         'address'    => $isOpen ? $session['checkin_address'] : $session['checkout_address'],
     ];
 
-    // ดึง checkin แรกของวันนี้ (สำหรับคำนวณเวลาทำงานสะสม)
-    $stmt2 = $conn->prepare("
-        SELECT checkin_at AS checked_at
-        FROM work_checkins
-        WHERE user_id = ? AND DATE(checkin_at) = CURDATE()
-        ORDER BY checkin_at ASC LIMIT 1
-    ");
-    $stmt2->bind_param('i', $userId);
-    $stmt2->execute();
-    $firstCheckin = $stmt2->get_result()->fetch_assoc();
-    $stmt2->close();
+    // ใช้ checkin_at ของ session ปัจจุบัน เพื่อให้นับเวลาใหม่ทุกครั้งที่เข้างาน
+    $firstCheckin = $isOpen ? ['checked_at' => $session['checkin_at']] : null;
 }
 
 echo json_encode([
