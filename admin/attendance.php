@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/session_config.php';
 require_once __DIR__ . '/../includes/permissions.php';
-requirePermission('page_logs');
+requirePermission('page_attendance');
 include '../config/db.php';
 
 // Filters

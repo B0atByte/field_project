@@ -13,12 +13,13 @@
 function getAllPermissions(): array {
     return [
         'pages' => [
-            'page_jobs'     => 'หน้าข้อมูลงาน',
-            'page_import'   => 'หน้านำเข้างาน',
-            'page_map'      => 'หน้าแผนที่',
-            'page_logs'     => 'หน้า Logs',
-            'page_users'    => 'หน้าจัดการผู้ใช้',
-            'page_settings' => 'หน้าตั้งค่าระบบ',
+            'page_jobs'       => 'หน้าข้อมูลงาน',
+            'page_import'     => 'หน้านำเข้างาน',
+            'page_map'        => 'หน้าแผนที่',
+            'page_logs'       => 'หน้า Logs',
+            'page_attendance' => 'หน้าบันทึกเวลาทำงาน',
+            'page_users'      => 'หน้าจัดการผู้ใช้',
+            'page_settings'   => 'หน้าตั้งค่าระบบ',
         ],
         'jobs' => [
             'action_add_job'          => 'เพิ่มงานใหม่',
