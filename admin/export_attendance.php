@@ -157,15 +157,18 @@ foreach ($colWidths as $col => $width) {
 $sheet2 = $spreadsheet->createSheet();
 $sheet2->setTitle('สรุปรายคน');
 
-// Get all field users and their stats for the period
 $sql2 = "
     SELECT
+        u.id                                    AS user_id,
         u.name                                  AS user_name,
         COUNT(DISTINCT DATE(wc.checkin_at))     AS days_present,
-        COUNT(*)                                AS total_checkins,
+        COUNT(*)                                AS total_sessions,
         SUM(wc.checkout_at IS NOT NULL)         AS total_checkouts,
-        MIN(wc.checkin_at)                      AS earliest_checkin,
-        MAX(wc.checkout_at)                     AS latest_checkout
+        SEC_TO_TIME(SUM(
+            CASE WHEN wc.checkout_at IS NOT NULL
+                 THEN TIMESTAMPDIFF(SECOND, wc.checkin_at, wc.checkout_at)
+                 ELSE 0 END
+        ))                                      AS total_work_time
     FROM work_checkins wc
     JOIN users u ON wc.user_id = u.id
     WHERE " . implode(' AND ', $where) . "
@@ -180,20 +183,22 @@ $stmt2->close();
 
 $sheet2->setCellValue('A1', 'ชื่อพนักงาน');
 $sheet2->setCellValue('B1', 'จำนวนวันที่มา');
-$sheet2->setCellValue('C1', 'จำนวนครั้งเข้างาน');
-$sheet2->setCellValue('D1', 'จำนวนครั้งออกงาน');
-$sheet2->getStyle('A1:D1')->applyFromArray($headerStyle);
+$sheet2->setCellValue('C1', 'จำนวน session');
+$sheet2->setCellValue('D1', 'ออกงานครบ');
+$sheet2->setCellValue('E1', 'เวลาทำงานรวม');
+$sheet2->getStyle('A1:E1')->applyFromArray($headerStyle);
 $sheet2->getRowDimension(1)->setRowHeight(28);
 
 $r2 = 2;
 foreach ($summary as $s) {
     $sheet2->setCellValue("A{$r2}", $s['user_name']);
     $sheet2->setCellValue("B{$r2}", (int)$s['days_present']);
-    $sheet2->setCellValue("C{$r2}", (int)$s['total_checkins']);
+    $sheet2->setCellValue("C{$r2}", (int)$s['total_sessions']);
     $sheet2->setCellValue("D{$r2}", (int)$s['total_checkouts']);
+    $sheet2->setCellValue("E{$r2}", $s['total_work_time'] ?? '—');
 
     $bg = ($r2 % 2 === 0) ? 'F8FAFC' : 'FFFFFF';
-    $sheet2->getStyle("A{$r2}:D{$r2}")->applyFromArray([
+    $sheet2->getStyle("A{$r2}:E{$r2}")->applyFromArray([
         'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $bg]],
         'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E2E8F0']]],
         'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
@@ -201,9 +206,80 @@ foreach ($summary as $s) {
     $sheet2->getRowDimension($r2)->setRowHeight(22);
     $r2++;
 }
-
-foreach (['A' => 28, 'B' => 18, 'C' => 22, 'D' => 22] as $col => $w) {
+foreach (['A' => 28, 'B' => 16, 'C' => 18, 'D' => 16, 'E' => 20] as $col => $w) {
     $sheet2->getColumnDimension($col)->setWidth($w);
+}
+
+// ---- Individual sheet per person ----
+// จัดกลุ่มข้อมูลตามคน
+$rowsByUser = [];
+foreach ($rows as $r) {
+    $rowsByUser[$r['user_id']]['name'] = $r['user_name'];
+    $rowsByUser[$r['user_id']]['rows'][] = $r;
+}
+
+foreach ($rowsByUser as $uid => $userData) {
+    // ตัดชื่อ sheet ให้ไม่เกิน 31 ตัวอักษร (Excel limit)
+    $sheetTitle = mb_substr($userData['name'], 0, 31);
+    $personSheet = $spreadsheet->createSheet();
+    $personSheet->setTitle($sheetTitle);
+
+    // Header
+    $pHeaders = ['A'=>'วันที่','B'=>'เวลาเข้างาน','C'=>'เวลาออกงาน','D'=>'ระยะเวลา','E'=>'พิกัดเข้างาน','F'=>'สถานที่เข้างาน','G'=>'พิกัดออกงาน','H'=>'สถานที่ออกงาน','I'=>'สถานะ'];
+    foreach ($pHeaders as $col => $label) {
+        $personSheet->setCellValue("{$col}1", $label);
+    }
+    $personSheet->getStyle('A1:I1')->applyFromArray($headerStyle);
+    $personSheet->getRowDimension(1)->setRowHeight(28);
+
+    $pr = 2;
+    $totalSec = 0;
+    foreach ($userData['rows'] as $r) {
+        $isOut    = !empty($r['last_checkout']);
+        $duration = '';
+        if ($r['first_checkin'] && $r['last_checkout']) {
+            $diff     = strtotime($r['last_checkout']) - strtotime($r['first_checkin']);
+            $totalSec += $diff;
+            $duration = sprintf('%d:%02d:%02d', floor($diff/3600), floor(($diff%3600)/60), $diff%60);
+        }
+        $inCoord  = ($r['in_lat']  && $r['in_lng'])  ? number_format($r['in_lat'],6).', '.number_format($r['in_lng'],6)  : '';
+        $outCoord = ($r['out_lat'] && $r['out_lng']) ? number_format($r['out_lat'],6).', '.number_format($r['out_lng'],6) : '';
+
+        $personSheet->setCellValue("A{$pr}", $r['work_date']);
+        $personSheet->setCellValue("B{$pr}", $r['first_checkin'] ? date('H:i:s', strtotime($r['first_checkin'])) : '');
+        $personSheet->setCellValue("C{$pr}", $r['last_checkout'] ? date('H:i:s', strtotime($r['last_checkout'])) : '');
+        $personSheet->setCellValue("D{$pr}", $duration);
+        $personSheet->setCellValue("E{$pr}", $inCoord);
+        $personSheet->setCellValue("F{$pr}", $r['in_address']  ?? '');
+        $personSheet->setCellValue("G{$pr}", $outCoord);
+        $personSheet->setCellValue("H{$pr}", $r['out_address'] ?? '');
+        $personSheet->setCellValue("I{$pr}", $isOut ? 'ออกงานแล้ว' : 'กำลังทำงาน');
+
+        $bg = $isOut ? ($pr % 2 === 0 ? 'F8FAFC' : 'FFFFFF') : 'ECFDF5';
+        $personSheet->getStyle("A{$pr}:I{$pr}")->applyFromArray([
+            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $bg]],
+            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E2E8F0']]],
+            'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+        $personSheet->getRowDimension($pr)->setRowHeight(22);
+        $pr++;
+    }
+
+    // แถวสรุปเวลารวมท้าย sheet
+    if ($totalSec > 0) {
+        $totalStr = sprintf('%d:%02d:%02d', floor($totalSec/3600), floor(($totalSec%3600)/60), $totalSec%60);
+        $personSheet->setCellValue("C{$pr}", 'รวม');
+        $personSheet->setCellValue("D{$pr}", $totalStr);
+        $personSheet->getStyle("A{$pr}:I{$pr}")->applyFromArray([
+            'font'    => ['bold' => true],
+            'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'DBEAFE']],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'BFDBFE']]],
+        ]);
+    }
+
+    foreach (['A'=>14,'B'=>14,'C'=>14,'D'=>14,'E'=>28,'F'=>36,'G'=>28,'H'=>36,'I'=>16] as $col => $w) {
+        $personSheet->getColumnDimension($col)->setWidth($w);
+    }
 }
 
 $spreadsheet->setActiveSheetIndex(0);
