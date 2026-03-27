@@ -3,6 +3,25 @@ require_once __DIR__ . '/../includes/session_config.php';
 require_once __DIR__ . '/../includes/permissions.php';
 requirePermission('page_attendance');
 include '../config/db.php';
+require_once __DIR__ . '/../includes/csrf.php';
+
+// Handle delete
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_checkin'])) {
+    verifyCsrfToken($_POST['csrf_token'] ?? '');
+    $del_id = (int)($_POST['checkin_id'] ?? 0);
+    if ($del_id > 0) {
+        $stmt_del = $conn->prepare("DELETE FROM work_checkins WHERE id = ?");
+        $stmt_del->bind_param('i', $del_id);
+        $stmt_del->execute();
+        $stmt_del->close();
+    }
+    $qs = http_build_query(array_filter([
+        'date'    => $_POST['redirect_date'] ?? '',
+        'user_id' => $_POST['redirect_user'] ?? '',
+    ]));
+    header('Location: attendance.php' . ($qs ? '?' . $qs : ''));
+    exit;
+}
 
 // Filters
 $filter_date  = $_GET['date']    ?? date('Y-m-d');
@@ -218,6 +237,7 @@ include '../components/header.php';
                   <th class="px-5 py-3 text-left">พิกัดเข้างาน</th>
                   <th class="px-5 py-3 text-left">พิกัดออกงาน</th>
                   <th class="px-5 py-3 text-center">สถานะ</th>
+                  <th class="px-5 py-3 text-center">จัดการ</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-50">
@@ -281,6 +301,13 @@ include '../components/header.php';
                         </span>
                       <?php endif; ?>
                     </td>
+                    <td class="px-5 py-4 text-center">
+                      <button
+                        onclick="confirmDelete(<?= $row['id'] ?>, '<?= htmlspecialchars(addslashes($row['user_name'])) ?>')"
+                        class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition">
+                        <i class="fas fa-trash-alt"></i> ลบ
+                      </button>
+                    </td>
                   </tr>
                 <?php endforeach; ?>
               </tbody>
@@ -339,7 +366,34 @@ include '../components/header.php';
   </main>
 </div>
 
+<!-- Delete Form -->
+<form id="deleteForm" method="POST" action="attendance.php">
+  <input type="hidden" name="delete_checkin" value="1">
+  <input type="hidden" name="csrf_token" value="<?= getCsrfToken() ?>">
+  <input type="hidden" name="checkin_id" id="deleteCheckinId">
+  <input type="hidden" name="redirect_date" value="<?= htmlspecialchars($filter_date) ?>">
+  <input type="hidden" name="redirect_user" value="<?= $filter_user ?>">
+</form>
+
 <script>
+  function confirmDelete(id, name) {
+    Swal.fire({
+      title: 'ยืนยันการลบ?',
+      html: `ลบข้อมูลการลงเวลาของ <strong>${name}</strong><br><span class="text-sm text-gray-500">การดำเนินการนี้ไม่สามารถย้อนกลับได้</span>`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'ลบ',
+      cancelButtonText: 'ยกเลิก',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        document.getElementById('deleteCheckinId').value = id;
+        document.getElementById('deleteForm').submit();
+      }
+    });
+  }
+
   function doExport() {
     const from = document.getElementById('expFrom').value;
     const to   = document.getElementById('expTo').value;
