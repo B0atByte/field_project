@@ -6,6 +6,8 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'field') {
 }
 include '../config/db.php';
 require_once '../includes/csrf.php';
+require_once '../config/env.php';
+$googleMapsKey = env('GOOGLE_MAPS_API_KEY', '');
 
 $job_id = $_GET['id'] ?? null;
 $user_id = $_SESSION['user']['id'];
@@ -1747,7 +1749,7 @@ $date_now = date("Y-m-d\TH:i");
 
   </script>
 
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB3NfHFEyJb3yltga-dX0C23jsLEAQpORc&callback=initMap"
+  <script src="https://maps.googleapis.com/maps/api/js?key=<?= htmlspecialchars($googleMapsKey) ?>&callback=initMap"
     async defer></script>
 
 </body>

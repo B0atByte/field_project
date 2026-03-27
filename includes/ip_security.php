@@ -109,7 +109,8 @@ function checkIpAccess($conn)
     }
 
     // Force HTTPS for the redirect link if needed
-    $redirectUrl = "https://180.183.247.29:7080/";
+    require_once __DIR__ . '/../config/env.php';
+    $redirectUrl = rtrim(env('APP_URL', 'https://localhost:7080'), '/') . '/';
 
     http_response_code(403);
     ?>
