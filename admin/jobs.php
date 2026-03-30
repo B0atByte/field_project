@@ -1029,7 +1029,8 @@ $submitted_end = $_GET['submitted_end'] ?? '';
             const params = new URLSearchParams(f);
             if (q) params.set('q', q);
 
-            window.location.href = 'export_jobs.php?' + params.toString();
+            Swal.close();
+            triggerExport('export_jobs.php?' + params.toString(), null, 'กำลังสร้าง Excel รายการงาน...');
             return false;
           }
         });
@@ -1084,6 +1085,7 @@ $submitted_end = $_GET['submitted_end'] ?? '';
     });
   </script>
 
+<?php include '../components/export_loading.php'; ?>
 </body>
 
 </html>

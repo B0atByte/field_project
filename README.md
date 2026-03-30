@@ -118,6 +118,15 @@ field_project/
 
 ## Changelog
 
+### v3.4 (2026-03-27)
+- เพิ่ม Export Attendance แบบแยก sheet รายคน (individual sheet per person)
+- เพิ่ม `components/export_loading.php` — loading overlay สำหรับ export
+- เพิ่มสิทธิ์ `page_attendance` แยกออกมาต่างหาก และแก้ access control หน้า attendance
+- เพิ่มฟีเจอร์ลบข้อมูล attendance พร้อม CSRF protection
+- ลบตัวเลือก Export PDF ออกจาก user permission options
+- เปลี่ยน port phpMyAdmin จาก 8081 → **8082** (แก้ conflict)
+- อัปเดต SQL backup ล่าสุด (`field_db_20260327_180001.sql`)
+
 ### v3.3 (2026-03-20)
 - เปลี่ยน schema `work_checkins`: จาก 1 event = 1 row เป็น **1 session = 1 row** (checkin_at + checkout_at ในแถวเดียว)
 - Check-in สร้าง row ใหม่, Check-out UPDATE row เดิม — ป้องกัน checkin ซ้ำถ้ายังไม่ได้ checkout

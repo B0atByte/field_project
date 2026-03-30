@@ -67,7 +67,7 @@ $offset = ($page - 1) * $per_page;
 
 $sql = "
     SELECT wc.id,
-           u.id AS user_id, u.name AS user_name,
+           u.id AS user_id, u.name AS user_name, u.username,
            wc.checkin_at  AS first_checkin,
            wc.checkout_at AS last_checkout,
            wc.checkin_lat  AS in_lat,  wc.checkin_lng  AS in_lng,
@@ -252,8 +252,9 @@ include '../components/header.php';
                   $isOut = !empty($row['last_checkout']);
                 ?>
                   <tr class="hover:bg-gray-50 transition">
-                    <td class="px-5 py-4 font-semibold text-gray-900">
-                      <?= htmlspecialchars($row['user_name']) ?>
+                    <td class="px-5 py-4">
+                      <div class="font-semibold text-gray-900"><?= htmlspecialchars($row['user_name']) ?></div>
+                      <div class="text-xs text-gray-400">@<?= htmlspecialchars($row['username'] ?? '') ?></div>
                     </td>
                     <td class="px-5 py-4 text-gray-700">
                       <?= $row['first_checkin']
@@ -401,7 +402,8 @@ include '../components/header.php';
     if (!from || !to) { alert('กรุณาระบุช่วงวันที่'); return; }
     if (from > to) { alert('วันเริ่มต้นต้องไม่มากกว่าวันสิ้นสุด'); return; }
     const params = new URLSearchParams({ date_from: from, date_to: to, user_id: user, range: '1' });
-    window.location.href = 'export_attendance.php?' + params.toString();
+    const label = from === to ? from : `${from}_to_${to}`;
+    triggerExport('export_attendance.php?' + params.toString(), `attendance_${label}.xlsx`, 'กำลังสร้าง Excel บันทึกเวลา...');
   }
 
   // Sync export header button with filter date
@@ -410,7 +412,7 @@ include '../components/header.php';
     const date = document.getElementById('fDate').value;
     const user = document.getElementById('fUser').value;
     const params = new URLSearchParams({ date_from: date, date_to: date, user_id: user, range: '1' });
-    window.location.href = 'export_attendance.php?' + params.toString();
+    triggerExport('export_attendance.php?' + params.toString(), `attendance_${date}.xlsx`, 'กำลังสร้าง Excel บันทึกเวลา...');
   });
 
   // Auto-set export range to match current filter date
@@ -420,4 +422,5 @@ include '../components/header.php';
   });
 </script>
 
+<?php include '../components/export_loading.php'; ?>
 <?php include '../components/footer.php'; ?>

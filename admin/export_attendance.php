@@ -46,6 +46,7 @@ $sql = "
         DATE(wc.checkin_at)   AS work_date,
         u.id                  AS user_id,
         u.name                AS user_name,
+        u.username            AS username,
         wc.checkin_at         AS first_checkin,
         wc.checkout_at        AS last_checkout,
         wc.checkin_lat        AS in_lat,
@@ -75,15 +76,16 @@ $sheet->setTitle('บันทึกเวลาทำงาน');
 $headers = [
     'A' => 'วันที่',
     'B' => 'ชื่อพนักงาน',
-    'C' => 'เวลาเข้างาน',
-    'D' => 'เวลาออกงาน',
-    'E' => 'ระยะเวลาทำงาน',
-    'F' => 'พิกัดเข้างาน (lat,lng)',
-    'G' => 'สถานที่เข้างาน',
-    'H' => 'พิกัดออกงาน (lat,lng)',
-    'I' => 'สถานที่ออกงาน',
-    'J' => 'สถานะ',
-    'K' => 'หมายเหตุ',
+    'C' => 'Username',
+    'D' => 'เวลาเข้างาน',
+    'E' => 'เวลาออกงาน',
+    'F' => 'ระยะเวลาทำงาน',
+    'G' => 'พิกัดเข้างาน (lat,lng)',
+    'H' => 'สถานที่เข้างาน',
+    'I' => 'พิกัดออกงาน (lat,lng)',
+    'J' => 'สถานที่ออกงาน',
+    'K' => 'สถานะ',
+    'L' => 'หมายเหตุ',
 ];
 
 foreach ($headers as $col => $label) {
@@ -97,7 +99,7 @@ $headerStyle = [
     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
     'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'BFDBFE']]],
 ];
-$sheet->getStyle('A1:K1')->applyFromArray($headerStyle);
+$sheet->getStyle('A1:L1')->applyFromArray($headerStyle);
 $sheet->getRowDimension(1)->setRowHeight(28);
 
 // ---- Data rows ----
@@ -122,15 +124,16 @@ foreach ($rows as $r) {
 
     $sheet->setCellValue("A{$rowNum}", $r['work_date']);
     $sheet->setCellValue("B{$rowNum}", $r['user_name']);
-    $sheet->setCellValue("C{$rowNum}", $r['first_checkin'] ? date('H:i:s', strtotime($r['first_checkin'])) : '');
-    $sheet->setCellValue("D{$rowNum}", $r['last_checkout'] ? date('H:i:s', strtotime($r['last_checkout'])) : '');
-    $sheet->setCellValue("E{$rowNum}", $duration);
-    $sheet->setCellValue("F{$rowNum}", $inCoord);
-    $sheet->setCellValue("G{$rowNum}", $r['in_address'] ?? '');
-    $sheet->setCellValue("H{$rowNum}", $outCoord);
-    $sheet->setCellValue("I{$rowNum}", $r['out_address'] ?? '');
-    $sheet->setCellValue("J{$rowNum}", $status);
-    $sheet->setCellValue("K{$rowNum}", '');
+    $sheet->setCellValue("C{$rowNum}", $r['username'] ?? '');
+    $sheet->setCellValue("D{$rowNum}", $r['first_checkin'] ? date('H:i:s', strtotime($r['first_checkin'])) : '');
+    $sheet->setCellValue("E{$rowNum}", $r['last_checkout'] ? date('H:i:s', strtotime($r['last_checkout'])) : '');
+    $sheet->setCellValue("F{$rowNum}", $duration);
+    $sheet->setCellValue("G{$rowNum}", $inCoord);
+    $sheet->setCellValue("H{$rowNum}", $r['in_address'] ?? '');
+    $sheet->setCellValue("I{$rowNum}", $outCoord);
+    $sheet->setCellValue("J{$rowNum}", $r['out_address'] ?? '');
+    $sheet->setCellValue("K{$rowNum}", $status);
+    $sheet->setCellValue("L{$rowNum}", '');
 
     // Row background: alternating + status color
     $bgColor = ($rowNum % 2 === 0) ? 'F8FAFC' : 'FFFFFF';
@@ -141,14 +144,14 @@ foreach ($rows as $r) {
         'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E2E8F0']]],
         'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
     ];
-    $sheet->getStyle("A{$rowNum}:K{$rowNum}")->applyFromArray($rowStyle);
+    $sheet->getStyle("A{$rowNum}:L{$rowNum}")->applyFromArray($rowStyle);
     $sheet->getRowDimension($rowNum)->setRowHeight(22);
 
     $rowNum++;
 }
 
 // ---- Column widths ----
-$colWidths = ['A'=>14,'B'=>22,'C'=>14,'D'=>14,'E'=>18,'F'=>28,'G'=>40,'H'=>28,'I'=>40,'J'=>16,'K'=>20];
+$colWidths = ['A'=>14,'B'=>22,'C'=>18,'D'=>14,'E'=>14,'F'=>18,'G'=>28,'H'=>40,'I'=>28,'J'=>40,'K'=>16,'L'=>20];
 foreach ($colWidths as $col => $width) {
     $sheet->getColumnDimension($col)->setWidth($width);
 }
@@ -161,6 +164,7 @@ $sql2 = "
     SELECT
         u.id                                    AS user_id,
         u.name                                  AS user_name,
+        u.username                              AS username,
         COUNT(DISTINCT DATE(wc.checkin_at))     AS days_present,
         COUNT(*)                                AS total_sessions,
         SUM(wc.checkout_at IS NOT NULL)         AS total_checkouts,
@@ -182,23 +186,25 @@ $summary = $stmt2->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt2->close();
 
 $sheet2->setCellValue('A1', 'ชื่อพนักงาน');
-$sheet2->setCellValue('B1', 'จำนวนวันที่มา');
-$sheet2->setCellValue('C1', 'จำนวน session');
-$sheet2->setCellValue('D1', 'ออกงานครบ');
-$sheet2->setCellValue('E1', 'เวลาทำงานรวม');
-$sheet2->getStyle('A1:E1')->applyFromArray($headerStyle);
+$sheet2->setCellValue('B1', 'Username');
+$sheet2->setCellValue('C1', 'จำนวนวันที่มา');
+$sheet2->setCellValue('D1', 'จำนวน session');
+$sheet2->setCellValue('E1', 'ออกงานครบ');
+$sheet2->setCellValue('F1', 'เวลาทำงานรวม');
+$sheet2->getStyle('A1:F1')->applyFromArray($headerStyle);
 $sheet2->getRowDimension(1)->setRowHeight(28);
 
 $r2 = 2;
 foreach ($summary as $s) {
     $sheet2->setCellValue("A{$r2}", $s['user_name']);
-    $sheet2->setCellValue("B{$r2}", (int)$s['days_present']);
-    $sheet2->setCellValue("C{$r2}", (int)$s['total_sessions']);
-    $sheet2->setCellValue("D{$r2}", (int)$s['total_checkouts']);
-    $sheet2->setCellValue("E{$r2}", $s['total_work_time'] ?? '—');
+    $sheet2->setCellValue("B{$r2}", $s['username'] ?? '');
+    $sheet2->setCellValue("C{$r2}", (int)$s['days_present']);
+    $sheet2->setCellValue("D{$r2}", (int)$s['total_sessions']);
+    $sheet2->setCellValue("E{$r2}", (int)$s['total_checkouts']);
+    $sheet2->setCellValue("F{$r2}", $s['total_work_time'] ?? '—');
 
     $bg = ($r2 % 2 === 0) ? 'F8FAFC' : 'FFFFFF';
-    $sheet2->getStyle("A{$r2}:E{$r2}")->applyFromArray([
+    $sheet2->getStyle("A{$r2}:F{$r2}")->applyFromArray([
         'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $bg]],
         'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E2E8F0']]],
         'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
@@ -206,7 +212,7 @@ foreach ($summary as $s) {
     $sheet2->getRowDimension($r2)->setRowHeight(22);
     $r2++;
 }
-foreach (['A' => 28, 'B' => 16, 'C' => 18, 'D' => 16, 'E' => 20] as $col => $w) {
+foreach (['A' => 28, 'B' => 18, 'C' => 16, 'D' => 18, 'E' => 16, 'F' => 20] as $col => $w) {
     $sheet2->getColumnDimension($col)->setWidth($w);
 }
 

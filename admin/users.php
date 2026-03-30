@@ -876,26 +876,33 @@ include '../components/sidebar.php';
   $('#roleFilter,#statusFilter').on('change', () => dt.draw());
 
   document.getElementById('exportCsv').addEventListener('click', () => {
+    showExportLoading('กำลังสร้าง CSV รายชื่อผู้ใช้...');
+    setTimeout(() => {
+      try {
         let headers = ["ชื่อ", "Username", "บทบาท", "แผนก", "สิทธิ์มองเห็น", "สถานะ"];
-      let rows = [];
-      dt.rows({search: 'applied' }).every(function () {
-        let tr = this.node();
-      let tds = tr.querySelectorAll('td');
-      rows.push([
-      tds[0].innerText.trim().split('\n')[0],
-      tds[1].innerText.trim(),
-      tds[2].innerText.trim(),
-      tds[3].innerText.trim(),
-      tds[4].innerText.trim(),
-      tds[5].innerText.trim()
-      ]);
-    });
-    let csv = [headers.join(',')].concat(rows.map(r => r.map(v => `"${v}"`).join(','))).join('\n');
-      let blob = new Blob([csv], {type: 'text/csv;charset=utf-8;' });
-      let url = URL.createObjectURL(blob);
-      let a = document.createElement('a');
-      a.href = url; a.download = 'users_export.csv'; a.click();
-      URL.revokeObjectURL(url);
+        let rows = [];
+        dt.rows({search: 'applied' }).every(function () {
+          let tr = this.node();
+          let tds = tr.querySelectorAll('td');
+          rows.push([
+            tds[0].innerText.trim().split('\n')[0],
+            tds[1].innerText.trim(),
+            tds[2].innerText.trim(),
+            tds[3].innerText.trim(),
+            tds[4].innerText.trim(),
+            tds[5].innerText.trim()
+          ]);
+        });
+        let csv = [headers.join(',')].concat(rows.map(r => r.map(v => `"${v}"`).join(','))).join('\n');
+        let blob = new Blob([csv], {type: 'text/csv;charset=utf-8;' });
+        let url = URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        a.href = url; a.download = 'users_export.csv'; a.click();
+        URL.revokeObjectURL(url);
+      } finally {
+        hideExportLoading();
+      }
+    }, 300);
   });
 
       // เพิ่มโค้ด toggle panel สำหรับเพิ่มสมาชิก
@@ -997,3 +1004,4 @@ include '../components/sidebar.php';
     });
   }
 </script>
+<?php include '../components/export_loading.php'; ?>
